@@ -1,0 +1,609 @@
+[CONTEXT — DSV / USER / WORKING PRINCIPLES]
+
+USER:
+- Vietnamese-speaking.
+- Wants concise, factual, precise answers; correctness > confidence.
+- Prefer Markdown tables when useful.
+- Do not guess/hallucinate. If unknown: “Tôi không biết”.
+- Distinguish verified facts vs analysis/assumptions.
+- Ask clarification if information is insufficient.
+- For current/verifiable information, use web search.
+- User dislikes overengineering/productivity frameworks.
+- Preferred workflow: one task at a time → finish DoD → next task. No scope expansion. When tired, stop/rest/sleep.
+- User can enter deep work for hours when coding/testing/researching; do not interrupt deep work with portfolio/marketing tasks.
+- User is aware LLM output can be wrong. Treat AI plans as hypotheses; implementation/playtest/evidence are the authority.
+
+==================================================
+DSV — DARK STARVE VALLEY
+==================================================
+
+GENRE:
+Stylized 3D Dark Fantasy Farming RPG, Unreal Engine, PC.
+
+CORE:
+Farming · Alchemy · Relationships · Choice · Consequence · Combat
+Future: asymmetric co-op / NPC Possession.
+
+HIGH CONCEPT:
+- Player is infected with the same disease as NPCs.
+- Serum is scarce.
+- Prototype dilemma:
+  6 seeds → 6 crops → max 2 serum → 3 candidates (Player + NPC A + NPC B) → only 2 saved.
+- Unsaved character becomes Boss.
+- Choice has relationship + gameplay + narrative consequences.
+
+GAMEPLAY LOOP:
+Explore → Gather → Farm → Alchemy → Interact → Choose → Relationship → Consequence → Combat/Romance/Story → Ending.
+
+PROTOTYPE:
+Single-player proof of gameplay loop.
+Architecture should support future:
+Character, NPC State, Quest, Relationship, Combat, Boss, Dialogue, World State, Player Choice, Possession.
+
+FUTURE CHARACTER MODEL:
+Character = Identity + State + Role + Abilities + Relationships + Agency
+
+Important:
+- Character is fundamentally one architecture.
+- Player/NPC/Boss are not necessarily separate character classes.
+- Boss = state/form/transformation of the same Character.
+- Possession = change of controller/agency, not conversion into PlayerCharacter.
+- Character can be controlled by AI or Player depending on agency/controller.
+- Current CharacterMaster is player-first; NPC implementation comes later.
+
+Example:
+CharacterMaster
+ └─ Identity / ID
+     ├─ Logic
+     ├─ State
+     ├─ Behavior
+     ├─ Animation
+     ├─ Character-specific Input
+     └─ Character-specific handling
+
+==================================================
+M4 / PROTOTYPE DEFINITION OF DONE
+==================================================
+
+1. Player becomes infected.
+2. Meets 2 infected NPCs.
+3. Disease progresses.
+4. Plants 6 seeds.
+5. Crafts 2 serum.
+6. Chooses 2 of 3 characters.
+7. Relationship/consequence occurs.
+8. Unsaved character becomes Boss.
+9. Combat.
+10. Ending.
+11. Checkpoint/reload.
+12. Alternate route only through New Game.
+
+M4 GATE:
+Player must understand:
+- infected state
+- 2 serum
+- 3 candidates
+- meaningful discomfort/regret
+- desire to see alternative outcome
+
+If M4 fails, stop expansion and fix core.
+
+SAVE:
+- No manual save.
+- No multiple slots.
+- No branch saves.
+- Only latest checkpoint.
+- Alternate branch requires New Game.
+
+==================================================
+CURRENT ROADMAP
+==================================================
+
+P0 Foundation
+P1 Character Architecture
+P2 World Blockout
+P3 Player Controller
+P4 Disease/Survival
+P5 Farming
+P6 Alchemy
+P7 NPC/Relationship
+P8 Choice/Narrative
+M4 Gate
+P9 Transformation/Boss/Combat
+P10 Checkpoint/UI
+P15 Vertical Slice
+P11 Art
+P12 Cinematic/Adult Event
+P13 Audio
+P14 QA
+
+Rules:
+- WIP = 1
+- Dependency first
+- Relative SP
+- No fixed deadline
+- Do not expand scope unless required by current task/DoD.
+
+==================================================
+CURRENT INVENTORY / UI SCOPE
+==================================================
+
+Do NOT build a general inventory system for M4.
+
+Inventory only needs:
+1. Planting → open inventory → select seed → confirm/cancel.
+2. Alchemy/serum → open inventory → select required item → confirm/cancel.
+3. NPC interaction → open relevant dialogue/character UI.
+
+No need now:
+- Move
+- Store
+- Drop
+- Sort
+- Weight
+- Capacity
+- Stack management
+- General-purpose item action framework
+
+If item is seed but player is not at FarmPlot:
+→ reject/disable Plant action.
+
+==================================================
+CURRENT FARMING FLOW
+==================================================
+
+Character input
+↓
+FarmPlot response state
+↓
+MainController
+↓
+Inventory UI
+↓
+Player selects seed
+↓
+UMG Item interface
+↓
+MainController
+↓
+EItemType routing/callback
+↓
+FarmPlot
+↓
+Plant Actor
+↓
+Growth complete
+↓
+FarmPlot
+↓
+Harvest
+
+Ownership:
+- Character: input/action
+- MainController: player-facing orchestration + UI routing
+- FarmPlot: farming state/lifecycle
+- Plant Actor: growth lifecycle
+- PlayerState: inventory/item ownership
+- UI: presentation + selection/result
+
+Plant Actor should callback FarmPlot, NOT Controller.
+FarmPlot decides whether harvest is available.
+
+==================================================
+CONTROLLER / UI ARCHITECTURE
+==================================================
+
+Current architecture intentionally uses MainController as central orchestrator.
+
+Objects can callback Controller.
+Controller can callback Objects.
+Controller can directly access UI and PlayerState.
+Character does NOT need to be an artificial intermediary.
+
+Therefore:
+Object → MainController is NOT inherently wrong.
+
+Main concern:
+Controller should orchestrate/route, not accumulate all domain gameplay logic.
+
+Current methods include patterns like:
+OpenInventory()
+OpenChest()
+OpenDialogue()
+OpenAlchemy()
+OpenCrafting()
+OpenFarmUI()
+OpenCharacterUI()
+OpenInventoryForPlanting()
+OpenInventoryForAlchemy()
+
+This is a real API proliferation concern, BUT:
+Different semantics naturally have different destinations:
+- Seed → FarmPlot::Plant
+- Weapon → Character::Equip
+- Food → Character::Consume
+- Material → Crafting
+- Quest item → Quest/Dialogue
+
+Do NOT refactor just to make method count smaller.
+
+Potential future abstraction:
+BeginInteraction(FInteractionContext)
+→ Controller
+→ UI
+→ CompleteInteraction(FInteractionResult)
+→ original interaction source
+
+Example:
+FarmPlot:
+Source = FarmPlot
+Interaction = Plant
+Filter = Seed
+
+Chest:
+Source = Chest
+Interaction = Transfer
+
+Crafting:
+Source = CraftingTable
+Interaction = Craft
+Filter = Material
+
+Important:
+EItemType answers “what is this item?”
+InteractionType/context answers “what is the player doing with this item here?”
+
+A TMap can be used as lightweight ROUTING/dispatch if repetition justifies it.
+Do NOT put all gameplay logic into giant TMap/TFunction lambdas.
+Do NOT build a generic InteractionComponent/framework prematurely.
+
+==================================================
+CURRENT C++ SOURCE ARCHITECTURE
+==================================================
+
+Source/
+├── DARKSTARVE.Target.cs
+├── DARKSTARVEEditor.Target.cs
+└── DARKSTARVE/
+    ├── DARKSTARVE.Build.cs
+    ├── DARKSTARVE.cpp/.h
+    ├── Characters/
+    │   ├── ECharacterState.h
+    │   ├── ELocomotion.h
+    │   ├── EWeaponMode.h
+    │   ├── PlayerCharacterMaster.cpp/.h
+    │   ├── Components/
+    │   │   ├── AttributeComponent.cpp/.h
+    │   │   ├── CombatComponent.cpp/.h
+    │   │   ├── SkinsHandleComponent.cpp/.h
+    │   │   └── StateMotionComponent.cpp/.h
+    │   └── Interfaces/
+    │       ├── ActionInterface.h
+    │       ├── InputKeyInterface.h
+    │       └── MotionInterface.h
+    ├── Clothing/
+    │   ├── EBodySlot.h
+    │   ├── FClothing.h
+    │   └── FSkinAsset.h
+    ├── Data/
+    │   ├── GameConfigData.h
+    │   ├── ObjectBaseData.h
+    │   ├── ObjectContainerData.h
+    │   ├── ObjectInteractData.h
+    │   └── ObjectPlantData.h
+    ├── Objects/
+    │   ├── ContainerComponent.cpp/.h
+    │   ├── EItemType.h
+    │   ├── EObjectState.h
+    │   ├── FContainer.h
+    │   ├── ObjectBase.cpp/.h
+    │   ├── Instances/
+    │   │   ├── ObjectFarmPlot.cpp/.h
+    │   │   ├── ObjectFurniture.cpp/.h
+    │   │   ├── ObjectInteract.cpp/.h
+    │   │   ├── ObjectPickup.cpp/.h
+    │   │   └── ObjectPlant.cpp/.h
+    │   └── Interfaces/
+    │       ├── ContainerInterface.h
+    │       ├── ObjectAttributeInterface.h
+    │       └── ObjectUIInterface.h
+    ├── Players/
+    │   ├── AvatarSave.h
+    │   └── MainPlayerState.cpp/.h
+    └── Systems/
+        ├── DebugCommandManager.cpp/.h
+        ├── EHUDMode.h
+        ├── GameInstanceSteam.cpp/.h
+        ├── GameStateMain.cpp/.h
+        ├── MainController.cpp/.h
+        ├── MainGameMode.cpp/.h
+        └── Interface/
+            └── UMGInterface.h
+
+DSV is now C++-first.
+Blueprint is secondary: cosmetics/UI/in-game presentation/implementation only.
+
+Portfolio positioning:
+C++ Gameplay Programming
+Unreal Engine Engineering
+Technical Design
+Systems Architecture
+Character/State
+Save/Load
+AI/NPC
+Relationship
+Choice/Consequence
+Combat
+Tools/debugging
+
+Do NOT frame DSV primarily as Blueprint work.
+
+==================================================
+SOURCE ARCHITECTURE AUDIT
+==================================================
+
+A Python source architecture report exists:
+DSV_Source_Architecture_Report.json
+GitHub raw:
+https://raw.githubusercontent.com/UuPhan/DSV/refs/heads/main/DSV_Source_Architecture_Report.json
+
+Report:
+- 19 .cpp
+- 42 .h
+- 61 source files
+
+Key architecture:
+- AttributeComponent : UActorComponent
+- CombatComponent : UActorComponent
+- SkinsHandleComponent : UActorComponent
+- StateMotionComponent : UActorComponent + IMotionInterface
+- PlayerCharacterMaster : ACharacter + IInputKeyInterface + IActionInterface
+- Data uses UPrimaryDataAsset hierarchy:
+  GameConfigData
+  ObjectBaseData
+  ObjectInteractData
+  ObjectContainerData
+  ObjectPlantData
+- Object hierarchy:
+  ObjectBase
+  → ObjectInteract
+  → Pickup / Plant / FarmPlot / Furniture
+- MainPlayerState owns inventory/container-related state.
+- MainController orchestrates UI/player interaction.
+- GameInstanceSteam, GameStateMain, MainGameMode, DebugCommandManager under Systems.
+
+Audit assessment:
+- Folder structure: ~7/10
+- Component architecture: ~8/10
+- Data separation: ~8/10
+- Interfaces: ~7.5/10
+- Object hierarchy: ~7/10
+- Systems: ~6/10
+- Dependency direction: ~6/10
+- Scalability: unknown
+
+Main concerns:
+- MainController integration hub
+- Some Object → MainController dependencies
+- PlayerCharacterMaster is player-specific
+- MainPlayerState may become God State
+- Systems folder is broad
+- Include hygiene / dependency direction
+
+IMPORTANT:
+Do NOT refactor folder structure just for aesthetics.
+Refactor when real maintenance/scaling pain appears.
+
+Known legacy:
+ActionInterface.h → FContainer.h is leftover from old Blueprint→C++ refactor.
+Old architecture had Object → Character → Controller.
+FContainer dependency is now unused legacy.
+Clean opportunistically; NOT a priority.
+
+==================================================
+TECHNICAL PRINCIPLES
+==================================================
+
+- Avoid giant enums for all character states.
+- Prefer orthogonal state dimensions.
+- State authority belongs to the relevant system.
+- SaveGame should use explicit structs/snapshots.
+- Debug commands via FAutoConsoleCommand / debug subsystem.
+- Compile success != package success != runtime success.
+- Telemetry should be event-based.
+- Unreal analytics layer + consent gate + GameAnalytics can be useful later.
+- Steam is not a general telemetry backend.
+- Do not build systems before the prototype proves they are needed.
+
+Core architecture rule:
+“Architecture should support the future, but implementation should solve the current problem.”
+
+==================================================
+PRODUCTION / WORKFLOW
+==================================================
+
+User wants:
+Task → DoD → implement → test → done → next task.
+
+Do NOT interrupt a coding/deep-work session to:
+- make portfolio post
+- make marketing content
+- create reusable asset
+- document excessively
+- brainstorm unrelated features
+
+Instead:
+- Finish production task.
+- Later, capture evidence/knowledge/reuse as by-products.
+- Marketing should be derived from actual production evidence.
+
+Research rule:
+Research only to answer a concrete current question.
+Unrelated ideas → LATER, not current scope.
+
+Deep work:
+- Sustained concentration on one hard problem.
+- Forgetting time while coding/testing/researching can be deep work.
+- Deep work ≠ exhaustion.
+- Use Definition of Done as stop condition.
+- When tired, stop and recharge.
+
+==================================================
+LLM / AI WORKING MODEL
+==================================================
+
+Do not treat assistant output as authority.
+
+Use:
+Roadmap = hypothesis
+Code = implementation
+Playtest/tests = evidence
+Market/user feedback = external evidence
+
+Common LLM failure modes:
+- misunderstanding requirements
+- technical factual errors
+- confident but incorrect architecture
+- over-abstraction
+- scope expansion
+- hidden assumptions
+
+Useful fact-check questions:
+1. “Bạn đang assume gì?”
+2. “Cái này có thực sự cần cho scope hiện tại không?”
+3. “Nếu không làm cách này thì vấn đề gì xảy ra?”
+4. “Làm sao kiểm chứng claim này?”
+
+Red flags:
+- “best practice” without mechanism
+- abstraction before pain exists
+- solution larger than problem
+- jargon without concrete behavior
+- no trade-offs
+- architecture aesthetics replacing real requirements
+
+==================================================
+PORTFOLIO / OLD PROJECTS
+==================================================
+
+Jelly Quest:
+- itch: https://vuphan.itch.io/jelly-quest
+- Epic MegaJam 2022
+- 508 entries
+- Unreal Engine 5.0.3
+- Windows
+- Submitted ~2 days 3 hours before deadline
+- Gameplay: 3 jellyfish characters answer riddles by collecting letter bubbles.
+- User made it with Unreal/Maya/Photoshop/Substance.
+- Correct framing: shipped jam prototype with clear identity and technical/gameplay evidence.
+- It was NOT a finalist/winner and NOT in Epic sizzle reel.
+- Epic editorial inclusion/SideFX collection are real but limited signals, NOT proof of production quality.
+
+Running Water Fill Out Of Space:
+- itch: https://vuphan.itch.io/running-water-fill-out-of-space
+- YouTube: https://youtu.be/HM9SZfJ7zns
+- Epic MegaJam 2021
+- 473 entries
+- Submitted ~1 day 16 hours before deadline
+- Uses Unreal/Maya/Photoshop/Substance/Houdini/SpeedTree
+- Stronger portfolio evidence for Environment / Procedural / Unreal / Technical Art.
+- Included in SideFX “Epic MegaJam 2021 Made-With-Houdini Games” collection.
+- Again: collection inclusion ≠ quality certification.
+
+Combined evidence:
+- 2 published Unreal projects
+- 2 Epic MegaJam submissions
+- shipped under time constraints
+- gameplay + 3D
+- Unreal + Maya + Substance + Houdini
+- Blueprint/C++ evolution
+- AI/animation/UI/environment/interaction
+- actual Windows builds
+
+Missing production evidence:
+- production pipeline
+- maintainability at larger scale
+- optimization
+- systematic playtesting/iteration
+- production-quality polish
+
+DSV should become the main portfolio asset.
+
+==================================================
+CAREER / MONEY STRATEGY
+==================================================
+
+DSV is:
+- long-term upside
+- portfolio asset
+- potential commercial product
+- NOT guaranteed income
+
+If runway is sufficient and DSV cash cost is near zero:
+→ prioritize finishing DSV rather than splitting attention into unrelated products/contracts.
+
+But:
+- do not assume DSV succeeds
+- use M4 / vertical slice / playtest / wishlist / launch evidence
+- have kill-switch criteria if core loop fails despite reasonable iteration/exposure
+
+If immediate income is needed:
+- productized UE5/C++/Houdini systems/assets can be secondary.
+- Prefer fixed-scope, milestone-based, async work if contracting.
+- Avoid multiple clients/context switching/daily standups/on-call/9–5 availability if incompatible with DSV capacity.
+
+Do not hire before revenue.
+
+==================================================
+PLAYER TESTING
+==================================================
+
+First M4 playtest:
+15–30 minutes.
+Start ~5 people → 10 → 20 → 50 if useful.
+
+Tester groups:
+- cold testers
+- target players
+- technical testers
+
+Ask:
+- What is happening?
+- What do you think you need to do?
+- Which NPC do you care about?
+- How do you feel at the 2/3 choice?
+- Do you want to see another outcome?
+
+Avoid:
+“Do you like the game?”
+
+==================================================
+CURRENT STRATEGIC PRINCIPLE
+==================================================
+
+The immediate objective is NOT:
+- perfect architecture
+- generic systems
+- complete inventory framework
+- multiplayer
+- marketing machine
+- portfolio optimization
+
+Immediate objective:
+BUILD THE SMALLEST DSV PROTOTYPE THAT PROVES THE CORE CHOICE/CONSEQUENCE LOOP.
+
+When discussing architecture:
+1. Check current M4 requirement.
+2. Check whether the problem is real/repeated.
+3. Prefer smallest solution.
+4. Preserve future extensibility only where cheap.
+5. Do not refactor merely because another architecture looks cleaner.
+
+==================================================
+CONVERSATION CONTINUITY
+==================================================
+
+If context is ambiguous:
+- Ask instead of guessing.
+- Do not invent details about DSV.
+- Treat the above as canonical unless the user explicitly updates it.
