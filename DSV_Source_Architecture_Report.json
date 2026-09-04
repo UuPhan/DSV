@@ -1,0 +1,2195 @@
+{
+  "files": [
+    "DARKSTARVE/Characters/Components/AttributeComponent.cpp",
+    "DARKSTARVE/Characters/Components/AttributeComponent.h",
+    "DARKSTARVE/Characters/Components/CombatComponent.cpp",
+    "DARKSTARVE/Characters/Components/CombatComponent.h",
+    "DARKSTARVE/Characters/Components/SkinsHandleComponent.cpp",
+    "DARKSTARVE/Characters/Components/SkinsHandleComponent.h",
+    "DARKSTARVE/Characters/Components/StateMotionComponent.cpp",
+    "DARKSTARVE/Characters/Components/StateMotionComponent.h",
+    "DARKSTARVE/Characters/ECharacterState.h",
+    "DARKSTARVE/Characters/ELocomotion.h",
+    "DARKSTARVE/Characters/EWeaponMode.h",
+    "DARKSTARVE/Characters/Interfaces/ActionInterface.h",
+    "DARKSTARVE/Characters/Interfaces/InputKeyInterface.h",
+    "DARKSTARVE/Characters/Interfaces/MotionInterface.h",
+    "DARKSTARVE/Characters/PlayerCharacterMaster.cpp",
+    "DARKSTARVE/Characters/PlayerCharacterMaster.h",
+    "DARKSTARVE/Clothing/EBodySlot.h",
+    "DARKSTARVE/Clothing/FClothing.h",
+    "DARKSTARVE/Clothing/FSkinAsset.h",
+    "DARKSTARVE/DARKSTARVE.cpp",
+    "DARKSTARVE/DARKSTARVE.h",
+    "DARKSTARVE/Data/GameConfigData.h",
+    "DARKSTARVE/Data/ObjectBaseData.h",
+    "DARKSTARVE/Data/ObjectContainerData.h",
+    "DARKSTARVE/Data/ObjectInteractData.h",
+    "DARKSTARVE/Data/ObjectPlantData.h",
+    "DARKSTARVE/Objects/ContainerComponent.cpp",
+    "DARKSTARVE/Objects/ContainerComponent.h",
+    "DARKSTARVE/Objects/EItemType.h",
+    "DARKSTARVE/Objects/EObjectState.h",
+    "DARKSTARVE/Objects/FContainer.h",
+    "DARKSTARVE/Objects/Instances/ObjectFarmPlot.cpp",
+    "DARKSTARVE/Objects/Instances/ObjectFarmPlot.h",
+    "DARKSTARVE/Objects/Instances/ObjectFurniture.cpp",
+    "DARKSTARVE/Objects/Instances/ObjectFurniture.h",
+    "DARKSTARVE/Objects/Instances/ObjectInteract.cpp",
+    "DARKSTARVE/Objects/Instances/ObjectInteract.h",
+    "DARKSTARVE/Objects/Instances/ObjectPickup.cpp",
+    "DARKSTARVE/Objects/Instances/ObjectPickup.h",
+    "DARKSTARVE/Objects/Instances/ObjectPlant.cpp",
+    "DARKSTARVE/Objects/Instances/ObjectPlant.h",
+    "DARKSTARVE/Objects/Interfaces/ContainerInterface.h",
+    "DARKSTARVE/Objects/Interfaces/ObjectAttributeInterface.h",
+    "DARKSTARVE/Objects/Interfaces/ObjectUIInterface.h",
+    "DARKSTARVE/Objects/ObjectBase.cpp",
+    "DARKSTARVE/Objects/ObjectBase.h",
+    "DARKSTARVE/Players/AvatarSave.h",
+    "DARKSTARVE/Players/MainPlayerState.cpp",
+    "DARKSTARVE/Players/MainPlayerState.h",
+    "DARKSTARVE/Systems/DebugCommandManager.cpp",
+    "DARKSTARVE/Systems/DebugCommandManager.h",
+    "DARKSTARVE/Systems/EHUDMode.h",
+    "DARKSTARVE/Systems/GameInstanceSteam.cpp",
+    "DARKSTARVE/Systems/GameInstanceSteam.h",
+    "DARKSTARVE/Systems/GameStateMain.cpp",
+    "DARKSTARVE/Systems/GameStateMain.h",
+    "DARKSTARVE/Systems/Interface/UMGInterface.h",
+    "DARKSTARVE/Systems/MainController.cpp",
+    "DARKSTARVE/Systems/MainController.h",
+    "DARKSTARVE/Systems/MainGameMode.cpp",
+    "DARKSTARVE/Systems/MainGameMode.h"
+  ],
+  "statistics": {
+    ".cpp": 19,
+    ".h": 42
+  },
+  "declarations": {
+    "DARKSTARVE/Characters/Components/AttributeComponent.cpp": {
+      "classes": [],
+      "structs": [],
+      "enums": [],
+      "unreal_macros": {
+        "UCLASS": 0,
+        "USTRUCT": 0,
+        "UENUM": 0,
+        "UINTERFACE": 0,
+        "UFUNCTION": 0,
+        "UPROPERTY": 0
+      },
+      "includes": [
+        "AttributeComponent.h",
+        "Math/UnrealMath.h"
+      ]
+    },
+    "DARKSTARVE/Characters/Components/AttributeComponent.h": {
+      "classes": [
+        {
+          "name": "description",
+          "base": ""
+        },
+        {
+          "name": "UAttributeComponent",
+          "base": "UActorComponent"
+        }
+      ],
+      "structs": [],
+      "enums": [],
+      "unreal_macros": {
+        "UCLASS": 1,
+        "USTRUCT": 0,
+        "UENUM": 0,
+        "UINTERFACE": 0,
+        "UFUNCTION": 2,
+        "UPROPERTY": 6
+      },
+      "includes": [
+        "CoreMinimal.h",
+        "Components/ActorComponent.h",
+        "AttributeComponent.generated.h"
+      ]
+    },
+    "DARKSTARVE/Characters/Components/CombatComponent.cpp": {
+      "classes": [],
+      "structs": [],
+      "enums": [],
+      "unreal_macros": {
+        "UCLASS": 0,
+        "USTRUCT": 0,
+        "UENUM": 0,
+        "UINTERFACE": 0,
+        "UFUNCTION": 0,
+        "UPROPERTY": 0
+      },
+      "includes": [
+        "CombatComponent.h"
+      ]
+    },
+    "DARKSTARVE/Characters/Components/CombatComponent.h": {
+      "classes": [
+        {
+          "name": "UCombatComponent",
+          "base": "UActorComponent"
+        }
+      ],
+      "structs": [],
+      "enums": [],
+      "unreal_macros": {
+        "UCLASS": 1,
+        "USTRUCT": 0,
+        "UENUM": 0,
+        "UINTERFACE": 0,
+        "UFUNCTION": 2,
+        "UPROPERTY": 4
+      },
+      "includes": [
+        "CoreMinimal.h",
+        "Components/ActorComponent.h",
+        "StateMotionComponent.h",
+        "DARKSTARVE/Characters/EWeaponMode.h",
+        "CombatComponent.generated.h"
+      ]
+    },
+    "DARKSTARVE/Characters/Components/SkinsHandleComponent.cpp": {
+      "classes": [],
+      "structs": [],
+      "enums": [],
+      "unreal_macros": {
+        "UCLASS": 0,
+        "USTRUCT": 0,
+        "UENUM": 0,
+        "UINTERFACE": 0,
+        "UFUNCTION": 0,
+        "UPROPERTY": 3
+      },
+      "includes": [
+        "SkinsHandleComponent.h",
+        "Kismet/GameplayStatics.h",
+        "DARKSTARVE/Systems/GameInstanceSteam.h"
+      ]
+    },
+    "DARKSTARVE/Characters/Components/SkinsHandleComponent.h": {
+      "classes": [
+        {
+          "name": "USkinsHandleComponent",
+          "base": ""
+        },
+        {
+          "name": "USkinsHandleComponent",
+          "base": "UActorComponent"
+        }
+      ],
+      "structs": [
+        "containing"
+      ],
+      "enums": [],
+      "unreal_macros": {
+        "UCLASS": 1,
+        "USTRUCT": 0,
+        "UENUM": 0,
+        "UINTERFACE": 0,
+        "UFUNCTION": 4,
+        "UPROPERTY": 4
+      },
+      "includes": [
+        "CoreMinimal.h",
+        "Components/ActorComponent.h",
+        "DARKSTARVE/Clothing/FClothing.h",
+        "DARKSTARVE/Clothing/FSkinAsset.h",
+        "DARKSTARVE/Clothing/EBodySlot.h",
+        "Engine/DataTable.h",
+        "SkinsHandleComponent.generated.h"
+      ]
+    },
+    "DARKSTARVE/Characters/Components/StateMotionComponent.cpp": {
+      "classes": [],
+      "structs": [],
+      "enums": [],
+      "unreal_macros": {
+        "UCLASS": 0,
+        "USTRUCT": 0,
+        "UENUM": 0,
+        "UINTERFACE": 0,
+        "UFUNCTION": 0,
+        "UPROPERTY": 0
+      },
+      "includes": [
+        "StateMotionComponent.h",
+        "AlphaBlend.h",
+        "PlayMontageCallbackProxy.h",
+        "GameFramework/Character.h",
+        "GameFramework/CharacterMovementComponent.h"
+      ]
+    },
+    "DARKSTARVE/Characters/Components/StateMotionComponent.h": {
+      "classes": [
+        {
+          "name": "UStateMotionComponent",
+          "base": "UActorComponent , public IMotionInterface"
+        }
+      ],
+      "structs": [],
+      "enums": [],
+      "unreal_macros": {
+        "UCLASS": 1,
+        "USTRUCT": 0,
+        "UENUM": 0,
+        "UINTERFACE": 0,
+        "UFUNCTION": 8,
+        "UPROPERTY": 15
+      },
+      "includes": [
+        "CoreMinimal.h",
+        "Components/ActorComponent.h",
+        "DARKSTARVE/Characters/Interfaces/MotionInterface.h",
+        "GameFramework/Character.h",
+        "GameFramework/CharacterMovementComponent.h",
+        "Animation/AnimMontage.h",
+        "Animation/AnimInstance.h",
+        "DARKSTARVE/Characters/ELocomotion.h",
+        "StateMotionComponent.generated.h"
+      ]
+    },
+    "DARKSTARVE/Characters/ECharacterState.h": {
+      "classes": [
+        {
+          "name": "ECharacterState",
+          "base": "uint8"
+        }
+      ],
+      "structs": [],
+      "enums": [
+        "ECharacterState"
+      ],
+      "unreal_macros": {
+        "UCLASS": 0,
+        "USTRUCT": 0,
+        "UENUM": 1,
+        "UINTERFACE": 0,
+        "UFUNCTION": 0,
+        "UPROPERTY": 0
+      },
+      "includes": [
+        "CoreMinimal.h",
+        "ECharacterState.generated.h"
+      ]
+    },
+    "DARKSTARVE/Characters/ELocomotion.h": {
+      "classes": [
+        {
+          "name": "ELocomotion",
+          "base": "uint8"
+        }
+      ],
+      "structs": [],
+      "enums": [
+        "ELocomotion"
+      ],
+      "unreal_macros": {
+        "UCLASS": 0,
+        "USTRUCT": 0,
+        "UENUM": 1,
+        "UINTERFACE": 0,
+        "UFUNCTION": 0,
+        "UPROPERTY": 0
+      },
+      "includes": [
+        "CoreMinimal.h",
+        "ELocomotion.generated.h"
+      ]
+    },
+    "DARKSTARVE/Characters/EWeaponMode.h": {
+      "classes": [
+        {
+          "name": "EWeaponMode",
+          "base": "uint8"
+        }
+      ],
+      "structs": [],
+      "enums": [
+        "EWeaponMode"
+      ],
+      "unreal_macros": {
+        "UCLASS": 0,
+        "USTRUCT": 0,
+        "UENUM": 1,
+        "UINTERFACE": 0,
+        "UFUNCTION": 0,
+        "UPROPERTY": 0
+      },
+      "includes": [
+        "CoreMinimal.h",
+        "EWeaponMode.generated.h"
+      ]
+    },
+    "DARKSTARVE/Characters/Interfaces/ActionInterface.h": {
+      "classes": [
+        {
+          "name": "AActor",
+          "base": ""
+        },
+        {
+          "name": "UMaterialInstance",
+          "base": ""
+        },
+        {
+          "name": "UActionInterface",
+          "base": "UInterface"
+        },
+        {
+          "name": "IActionInterface",
+          "base": "IInterface"
+        }
+      ],
+      "structs": [],
+      "enums": [],
+      "unreal_macros": {
+        "UCLASS": 3,
+        "USTRUCT": 0,
+        "UENUM": 0,
+        "UINTERFACE": 2,
+        "UFUNCTION": 3,
+        "UPROPERTY": 0
+      },
+      "includes": [
+        "CoreMinimal.h",
+        "Components/SceneComponent.h",
+        "DARKSTARVE/Objects/FContainer.h",
+        "ActionInterface.generated.h"
+      ]
+    },
+    "DARKSTARVE/Characters/Interfaces/InputKeyInterface.h": {
+      "classes": [
+        {
+          "name": "UInputKeyInterface",
+          "base": "UInterface"
+        },
+        {
+          "name": "IInputKeyInterface",
+          "base": "IInterface"
+        }
+      ],
+      "structs": [],
+      "enums": [],
+      "unreal_macros": {
+        "UCLASS": 3,
+        "USTRUCT": 0,
+        "UENUM": 0,
+        "UINTERFACE": 2,
+        "UFUNCTION": 8,
+        "UPROPERTY": 0
+      },
+      "includes": [
+        "CoreMinimal.h",
+        "DARKSTARVE/Characters/EWeaponMode.h",
+        "InputKeyInterface.generated.h"
+      ]
+    },
+    "DARKSTARVE/Characters/Interfaces/MotionInterface.h": {
+      "classes": [
+        {
+          "name": "implement",
+          "base": ""
+        },
+        {
+          "name": "UMotionInterface",
+          "base": "UInterface"
+        },
+        {
+          "name": "IMotionInterface",
+          "base": "IInterface"
+        }
+      ],
+      "structs": [],
+      "enums": [
+        "ELocomotion"
+      ],
+      "unreal_macros": {
+        "UCLASS": 0,
+        "USTRUCT": 0,
+        "UENUM": 0,
+        "UINTERFACE": 1,
+        "UFUNCTION": 2,
+        "UPROPERTY": 0
+      },
+      "includes": [
+        "CoreMinimal.h",
+        "DARKSTARVE/Characters/ELocomotion.h",
+        "MotionInterface.generated.h"
+      ]
+    },
+    "DARKSTARVE/Characters/PlayerCharacterMaster.cpp": {
+      "classes": [],
+      "structs": [],
+      "enums": [],
+      "unreal_macros": {
+        "UCLASS": 0,
+        "USTRUCT": 0,
+        "UENUM": 0,
+        "UINTERFACE": 0,
+        "UFUNCTION": 0,
+        "UPROPERTY": 0
+      },
+      "includes": [
+        "PlayerCharacterMaster.h",
+        "Components/CapsuleComponent.h",
+        "DARKSTARVE/Characters/ECharacterState.h",
+        "DARKSTARVE/Objects/Interfaces/ObjectAttributeInterface.h",
+        "DARKSTARVE/Players/MainPlayerState.h",
+        "ECharacterState.h",
+        "Engine/EngineTypes.h",
+        "Math/MathFwd.h",
+        "Math/RotationMatrix.h",
+        "UObject/UnrealNames.h"
+      ]
+    },
+    "DARKSTARVE/Characters/PlayerCharacterMaster.h": {
+      "classes": [
+        {
+          "name": "that",
+          "base": ""
+        },
+        {
+          "name": "APlayerCharacterMaster",
+          "base": "ACharacter , public IInputKeyInterface , public IActionInterface"
+        }
+      ],
+      "structs": [],
+      "enums": [],
+      "unreal_macros": {
+        "UCLASS": 1,
+        "USTRUCT": 0,
+        "UENUM": 0,
+        "UINTERFACE": 0,
+        "UFUNCTION": 0,
+        "UPROPERTY": 22
+      },
+      "includes": [
+        "CoreMinimal.h",
+        "GameFramework/Character.h",
+        "Camera/CameraComponent.h",
+        "GameFramework/SpringArmComponent.h",
+        "Components/BillboardComponent.h",
+        "Components/ChildActorComponent.h",
+        "Components/SkeletalMeshComponent.h",
+        "DARKSTARVE/Characters/ECharacterState.h",
+        "DARKSTARVE/Characters/Interfaces/ActionInterface.h",
+        "DARKSTARVE/Characters/Interfaces/InputKeyInterface.h",
+        "DARKSTARVE/Characters/Components/StateMotionComponent.h",
+        "DARKSTARVE/Characters/Components/AttributeComponent.h",
+        "DARKSTARVE/Characters/Components/CombatComponent.h",
+        "DARKSTARVE/Characters/Components/SkinsHandleComponent.h",
+        "PlayerCharacterMaster.generated.h"
+      ]
+    },
+    "DARKSTARVE/Clothing/EBodySlot.h": {
+      "classes": [
+        {
+          "name": "EBodySlot",
+          "base": "uint8"
+        }
+      ],
+      "structs": [],
+      "enums": [
+        "EBodySlot"
+      ],
+      "unreal_macros": {
+        "UCLASS": 0,
+        "USTRUCT": 0,
+        "UENUM": 1,
+        "UINTERFACE": 0,
+        "UFUNCTION": 0,
+        "UPROPERTY": 0
+      },
+      "includes": [
+        "CoreMinimal.h",
+        "EBodySlot.generated.h"
+      ]
+    },
+    "DARKSTARVE/Clothing/FClothing.h": {
+      "classes": [
+        {
+          "name": "của",
+          "base": ""
+        },
+        {
+          "name": "USkeletalMesh",
+          "base": ""
+        },
+        {
+          "name": "UTexture2D",
+          "base": ""
+        }
+      ],
+      "structs": [
+        "FClothing"
+      ],
+      "enums": [],
+      "unreal_macros": {
+        "UCLASS": 0,
+        "USTRUCT": 2,
+        "UENUM": 0,
+        "UINTERFACE": 0,
+        "UFUNCTION": 0,
+        "UPROPERTY": 7
+      },
+      "includes": [
+        "CoreMinimal.h",
+        "Engine/DataTable.h",
+        "EBodySlot.h",
+        "FClothing.generated.h"
+      ]
+    },
+    "DARKSTARVE/Clothing/FSkinAsset.h": {
+      "classes": [
+        {
+          "name": "của",
+          "base": ""
+        }
+      ],
+      "structs": [
+        "FSkinAsset"
+      ],
+      "enums": [],
+      "unreal_macros": {
+        "UCLASS": 0,
+        "USTRUCT": 1,
+        "UENUM": 0,
+        "UINTERFACE": 0,
+        "UFUNCTION": 0,
+        "UPROPERTY": 2
+      },
+      "includes": [
+        "CoreMinimal.h",
+        "Engine/DataTable.h",
+        "EBodySlot.h",
+        "FSkinAsset.generated.h"
+      ]
+    },
+    "DARKSTARVE/DARKSTARVE.cpp": {
+      "classes": [],
+      "structs": [],
+      "enums": [],
+      "unreal_macros": {
+        "UCLASS": 0,
+        "USTRUCT": 0,
+        "UENUM": 0,
+        "UINTERFACE": 0,
+        "UFUNCTION": 0,
+        "UPROPERTY": 0
+      },
+      "includes": [
+        "DARKSTARVE.h",
+        "Modules/ModuleManager.h"
+      ]
+    },
+    "DARKSTARVE/DARKSTARVE.h": {
+      "classes": [],
+      "structs": [],
+      "enums": [],
+      "unreal_macros": {
+        "UCLASS": 0,
+        "USTRUCT": 0,
+        "UENUM": 0,
+        "UINTERFACE": 0,
+        "UFUNCTION": 0,
+        "UPROPERTY": 0
+      },
+      "includes": [
+        "CoreMinimal.h"
+      ]
+    },
+    "DARKSTARVE/Data/GameConfigData.h": {
+      "classes": [
+        {
+          "name": "UGameConfigData",
+          "base": "UPrimaryDataAsset"
+        }
+      ],
+      "structs": [],
+      "enums": [],
+      "unreal_macros": {
+        "UCLASS": 1,
+        "USTRUCT": 0,
+        "UENUM": 0,
+        "UINTERFACE": 0,
+        "UFUNCTION": 0,
+        "UPROPERTY": 12
+      },
+      "includes": [
+        "CoreMinimal.h",
+        "Engine/DataAsset.h",
+        "GameConfigData.generated.h"
+      ]
+    },
+    "DARKSTARVE/Data/ObjectBaseData.h": {
+      "classes": [
+        {
+          "name": "USkeletalMesh",
+          "base": ""
+        },
+        {
+          "name": "UStaticMesh",
+          "base": ""
+        },
+        {
+          "name": "UMaterialInstance",
+          "base": ""
+        },
+        {
+          "name": "UTexture2D",
+          "base": ""
+        },
+        {
+          "name": "for",
+          "base": ""
+        },
+        {
+          "name": "UObjectBaseData",
+          "base": "UPrimaryDataAsset"
+        },
+        {
+          "name": "description",
+          "base": ""
+        }
+      ],
+      "structs": [],
+      "enums": [
+        "we"
+      ],
+      "unreal_macros": {
+        "UCLASS": 1,
+        "USTRUCT": 0,
+        "UENUM": 0,
+        "UINTERFACE": 0,
+        "UFUNCTION": 0,
+        "UPROPERTY": 16
+      },
+      "includes": [
+        "CoreMinimal.h",
+        "Engine/DataAsset.h",
+        "../Objects/EItemType.h",
+        "ObjectBaseData.generated.h"
+      ]
+    },
+    "DARKSTARVE/Data/ObjectContainerData.h": {
+      "classes": [
+        {
+          "name": "AObjectBase",
+          "base": ""
+        },
+        {
+          "name": "for",
+          "base": ""
+        },
+        {
+          "name": "UObjectContainerData",
+          "base": "UObjectInteractData"
+        },
+        {
+          "name": "description",
+          "base": ""
+        }
+      ],
+      "structs": [],
+      "enums": [],
+      "unreal_macros": {
+        "UCLASS": 1,
+        "USTRUCT": 0,
+        "UENUM": 0,
+        "UINTERFACE": 0,
+        "UFUNCTION": 0,
+        "UPROPERTY": 1
+      },
+      "includes": [
+        "CoreMinimal.h",
+        "Containers/Map.h",
+        "Templates/SubclassOf.h",
+        "DARKSTARVE/Objects/FContainer.h",
+        "ObjectInteractData.h",
+        "ObjectContainerData.generated.h"
+      ]
+    },
+    "DARKSTARVE/Data/ObjectInteractData.h": {
+      "classes": [
+        {
+          "name": "for",
+          "base": ""
+        },
+        {
+          "name": "UObjectInteractData",
+          "base": "UObjectBaseData"
+        },
+        {
+          "name": "description",
+          "base": ""
+        },
+        {
+          "name": "description",
+          "base": ""
+        },
+        {
+          "name": "description",
+          "base": ""
+        },
+        {
+          "name": "description",
+          "base": ""
+        }
+      ],
+      "structs": [],
+      "enums": [],
+      "unreal_macros": {
+        "UCLASS": 1,
+        "USTRUCT": 0,
+        "UENUM": 0,
+        "UINTERFACE": 0,
+        "UFUNCTION": 0,
+        "UPROPERTY": 4
+      },
+      "includes": [
+        "CoreMinimal.h",
+        "Engine/DataAsset.h",
+        "ObjectBaseData.h",
+        "ObjectInteractData.generated.h"
+      ]
+    },
+    "DARKSTARVE/Data/ObjectPlantData.h": {
+      "classes": [
+        {
+          "name": "UObjectPlantData",
+          "base": "UObjectContainerData"
+        }
+      ],
+      "structs": [],
+      "enums": [],
+      "unreal_macros": {
+        "UCLASS": 1,
+        "USTRUCT": 0,
+        "UENUM": 0,
+        "UINTERFACE": 0,
+        "UFUNCTION": 0,
+        "UPROPERTY": 3
+      },
+      "includes": [
+        "CoreMinimal.h",
+        "ObjectContainerData.h",
+        "ObjectPlantData.generated.h"
+      ]
+    },
+    "DARKSTARVE/Objects/ContainerComponent.cpp": {
+      "classes": [],
+      "structs": [],
+      "enums": [],
+      "unreal_macros": {
+        "UCLASS": 0,
+        "USTRUCT": 0,
+        "UENUM": 0,
+        "UINTERFACE": 0,
+        "UFUNCTION": 1,
+        "UPROPERTY": 0
+      },
+      "includes": [
+        "ContainerComponent.h",
+        "ObjectBase.h"
+      ]
+    },
+    "DARKSTARVE/Objects/ContainerComponent.h": {
+      "classes": [
+        {
+          "name": "AObjectBase",
+          "base": ""
+        },
+        {
+          "name": "UContainerComponent",
+          "base": "UActorComponent"
+        }
+      ],
+      "structs": [],
+      "enums": [],
+      "unreal_macros": {
+        "UCLASS": 2,
+        "USTRUCT": 0,
+        "UENUM": 0,
+        "UINTERFACE": 0,
+        "UFUNCTION": 6,
+        "UPROPERTY": 5
+      },
+      "includes": [
+        "CoreMinimal.h",
+        "Components/ActorComponent.h",
+        "FContainer.h",
+        "ContainerComponent.generated.h"
+      ]
+    },
+    "DARKSTARVE/Objects/EItemType.h": {
+      "classes": [
+        {
+          "name": "EItemType",
+          "base": "uint8"
+        }
+      ],
+      "structs": [],
+      "enums": [
+        "EItemType"
+      ],
+      "unreal_macros": {
+        "UCLASS": 0,
+        "USTRUCT": 0,
+        "UENUM": 1,
+        "UINTERFACE": 0,
+        "UFUNCTION": 0,
+        "UPROPERTY": 0
+      },
+      "includes": [
+        "CoreMinimal.h",
+        "EItemType.generated.h"
+      ]
+    },
+    "DARKSTARVE/Objects/EObjectState.h": {
+      "classes": [
+        {
+          "name": "EObjectState",
+          "base": "uint8"
+        }
+      ],
+      "structs": [],
+      "enums": [
+        "EObjectState"
+      ],
+      "unreal_macros": {
+        "UCLASS": 0,
+        "USTRUCT": 0,
+        "UENUM": 1,
+        "UINTERFACE": 0,
+        "UFUNCTION": 0,
+        "UPROPERTY": 0
+      },
+      "includes": [
+        "CoreMinimal.h",
+        "EObjectState.generated.h"
+      ]
+    },
+    "DARKSTARVE/Objects/FContainer.h": {
+      "classes": [
+        {
+          "name": "của",
+          "base": ""
+        }
+      ],
+      "structs": [
+        "FContainer"
+      ],
+      "enums": [],
+      "unreal_macros": {
+        "UCLASS": 0,
+        "USTRUCT": 1,
+        "UENUM": 0,
+        "UINTERFACE": 0,
+        "UFUNCTION": 0,
+        "UPROPERTY": 2
+      },
+      "includes": [
+        "CoreMinimal.h",
+        "Engine/DataTable.h",
+        "DARKSTARVE/Data/ObjectBaseData.h",
+        "FContainer.generated.h"
+      ]
+    },
+    "DARKSTARVE/Objects/Instances/ObjectFarmPlot.cpp": {
+      "classes": [],
+      "structs": [],
+      "enums": [],
+      "unreal_macros": {
+        "UCLASS": 0,
+        "USTRUCT": 0,
+        "UENUM": 0,
+        "UINTERFACE": 0,
+        "UFUNCTION": 0,
+        "UPROPERTY": 0
+      },
+      "includes": [
+        "ObjectFarmPlot.h",
+        "Blueprint/UserWidget.h",
+        "Components/SlateWrapperTypes.h",
+        "DARKSTARVE/Objects/Interfaces/ObjectAttributeInterface.h",
+        "DARKSTARVE/Systems/EHUDMode.h",
+        "DARKSTARVE/Systems/MainController.h",
+        "Kismet/GameplayStatics.h",
+        "ObjectPlant.h"
+      ]
+    },
+    "DARKSTARVE/Objects/Instances/ObjectFarmPlot.h": {
+      "classes": [
+        {
+          "name": "AObjectFarmPlot",
+          "base": "AObjectInteract"
+        }
+      ],
+      "structs": [],
+      "enums": [],
+      "unreal_macros": {
+        "UCLASS": 1,
+        "USTRUCT": 0,
+        "UENUM": 0,
+        "UINTERFACE": 0,
+        "UFUNCTION": 3,
+        "UPROPERTY": 2
+      },
+      "includes": [
+        "CoreMinimal.h",
+        "GameFramework/Actor.h",
+        "DARKSTARVE/Objects/Instances/ObjectInteract.h",
+        "ObjectPlant.h",
+        "Templates/SubclassOf.h",
+        "ObjectFarmPlot.generated.h"
+      ]
+    },
+    "DARKSTARVE/Objects/Instances/ObjectFurniture.cpp": {
+      "classes": [],
+      "structs": [],
+      "enums": [],
+      "unreal_macros": {
+        "UCLASS": 0,
+        "USTRUCT": 0,
+        "UENUM": 0,
+        "UINTERFACE": 0,
+        "UFUNCTION": 0,
+        "UPROPERTY": 0
+      },
+      "includes": [
+        "ObjectFurniture.h",
+        "Components/ActorComponent.h",
+        "Components/BoxComponent.h",
+        "Components/PrimitiveComponent.h",
+        "DARKSTARVE/Characters/Interfaces/ActionInterface.h",
+        "DARKSTARVE/Objects/EObjectState.h",
+        "Engine/EngineTypes.h",
+        "Math/MathFwd.h",
+        "Components/SphereComponent.h",
+        "UObject/Object.h"
+      ]
+    },
+    "DARKSTARVE/Objects/Instances/ObjectFurniture.h": {
+      "classes": [
+        {
+          "name": "AObjectFurniture",
+          "base": "AObjectInteract"
+        }
+      ],
+      "structs": [],
+      "enums": [],
+      "unreal_macros": {
+        "UCLASS": 1,
+        "USTRUCT": 0,
+        "UENUM": 0,
+        "UINTERFACE": 0,
+        "UFUNCTION": 0,
+        "UPROPERTY": 3
+      },
+      "includes": [
+        "DARKSTARVE/Characters/Interfaces/ActionInterface.h",
+        "DARKSTARVE/Objects/Interfaces/ObjectAttributeInterface.h",
+        "DARKSTARVE/Objects/ObjectBase.h",
+        "Materials/MaterialInterface.h",
+        "ObjectInteract.h",
+        "ObjectFurniture.generated.h"
+      ]
+    },
+    "DARKSTARVE/Objects/Instances/ObjectInteract.cpp": {
+      "classes": [],
+      "structs": [],
+      "enums": [],
+      "unreal_macros": {
+        "UCLASS": 0,
+        "USTRUCT": 0,
+        "UENUM": 0,
+        "UINTERFACE": 0,
+        "UFUNCTION": 0,
+        "UPROPERTY": 0
+      },
+      "includes": [
+        "ObjectInteract.h",
+        "DARKSTARVE/Data/ObjectInteractData.h",
+        "Components/ActorComponent.h",
+        "Components/BoxComponent.h",
+        "Components/PrimitiveComponent.h",
+        "DARKSTARVE/Characters/Interfaces/ActionInterface.h",
+        "DARKSTARVE/Objects/EObjectState.h",
+        "Engine/EngineTypes.h",
+        "Math/MathFwd.h",
+        "Components/SphereComponent.h",
+        "UObject/Object.h"
+      ]
+    },
+    "DARKSTARVE/Objects/Instances/ObjectInteract.h": {
+      "classes": [
+        {
+          "name": "AObjectInteract",
+          "base": "AObjectBase , public IObjectAttributeInterface , public IActionInterface"
+        }
+      ],
+      "structs": [],
+      "enums": [],
+      "unreal_macros": {
+        "UCLASS": 1,
+        "USTRUCT": 0,
+        "UENUM": 0,
+        "UINTERFACE": 0,
+        "UFUNCTION": 7,
+        "UPROPERTY": 2
+      },
+      "includes": [
+        "DARKSTARVE/Characters/Interfaces/ActionInterface.h",
+        "DARKSTARVE/Objects/Interfaces/ObjectAttributeInterface.h",
+        "DARKSTARVE/Objects/ObjectBase.h",
+        "Materials/MaterialInterface.h",
+        "ObjectInteract.generated.h"
+      ]
+    },
+    "DARKSTARVE/Objects/Instances/ObjectPickup.cpp": {
+      "classes": [],
+      "structs": [],
+      "enums": [],
+      "unreal_macros": {
+        "UCLASS": 0,
+        "USTRUCT": 0,
+        "UENUM": 0,
+        "UINTERFACE": 0,
+        "UFUNCTION": 0,
+        "UPROPERTY": 0
+      },
+      "includes": [
+        "ObjectPickup.h",
+        "DARKSTARVE/Data/ObjectContainerData.h",
+        "DARKSTARVE/Objects/ContainerComponent.h",
+        "DARKSTARVE/Objects/FContainer.h",
+        "DARKSTARVE/Players/MainPlayerState.h"
+      ]
+    },
+    "DARKSTARVE/Objects/Instances/ObjectPickup.h": {
+      "classes": [
+        {
+          "name": "AObjectPickup",
+          "base": "AObjectInteract"
+        }
+      ],
+      "structs": [],
+      "enums": [],
+      "unreal_macros": {
+        "UCLASS": 1,
+        "USTRUCT": 0,
+        "UENUM": 0,
+        "UINTERFACE": 0,
+        "UFUNCTION": 0,
+        "UPROPERTY": 1
+      },
+      "includes": [
+        "CoreMinimal.h",
+        "DARKSTARVE/Objects/ContainerComponent.h",
+        "DARKSTARVE/Objects/Instances/ObjectInteract.h",
+        "ObjectPickup.generated.h"
+      ]
+    },
+    "DARKSTARVE/Objects/Instances/ObjectPlant.cpp": {
+      "classes": [],
+      "structs": [],
+      "enums": [],
+      "unreal_macros": {
+        "UCLASS": 0,
+        "USTRUCT": 0,
+        "UENUM": 0,
+        "UINTERFACE": 0,
+        "UFUNCTION": 0,
+        "UPROPERTY": 0
+      },
+      "includes": [
+        "ObjectPlant.h",
+        "Components/MeshComponent.h",
+        "Components/BoxComponent.h",
+        "Components/SphereComponent.h",
+        "DARKSTARVE/Data/ObjectPlantData.h"
+      ]
+    },
+    "DARKSTARVE/Objects/Instances/ObjectPlant.h": {
+      "classes": [
+        {
+          "name": "AObjectPlant",
+          "base": "AObjectInteract"
+        }
+      ],
+      "structs": [],
+      "enums": [],
+      "unreal_macros": {
+        "UCLASS": 1,
+        "USTRUCT": 0,
+        "UENUM": 0,
+        "UINTERFACE": 0,
+        "UFUNCTION": 3,
+        "UPROPERTY": 2
+      },
+      "includes": [
+        "DARKSTARVE/Objects/Instances/ObjectInteract.h",
+        "DARKSTARVE/Data/ObjectPlantData.h",
+        "ObjectInteract.h",
+        "ObjectPlant.generated.h"
+      ]
+    },
+    "DARKSTARVE/Objects/Interfaces/ContainerInterface.h": {
+      "classes": [
+        {
+          "name": "UActorComponent",
+          "base": ""
+        },
+        {
+          "name": "UObjectBaseData",
+          "base": ""
+        },
+        {
+          "name": "AObjectBase",
+          "base": ""
+        },
+        {
+          "name": "UContainerInterface",
+          "base": "UInterface"
+        },
+        {
+          "name": "IContainerInterface",
+          "base": "IInterface"
+        }
+      ],
+      "structs": [],
+      "enums": [],
+      "unreal_macros": {
+        "UCLASS": 0,
+        "USTRUCT": 0,
+        "UENUM": 0,
+        "UINTERFACE": 1,
+        "UFUNCTION": 3,
+        "UPROPERTY": 0
+      },
+      "includes": [
+        "CoreMinimal.h",
+        "GameFramework/Actor.h",
+        "ContainerInterface.generated.h"
+      ]
+    },
+    "DARKSTARVE/Objects/Interfaces/ObjectAttributeInterface.h": {
+      "classes": [
+        {
+          "name": "UObjectAttributeInterface",
+          "base": "UInterface"
+        },
+        {
+          "name": "holds",
+          "base": ""
+        },
+        {
+          "name": "IObjectAttributeInterface",
+          "base": "IInterface"
+        }
+      ],
+      "structs": [],
+      "enums": [],
+      "unreal_macros": {
+        "UCLASS": 0,
+        "USTRUCT": 0,
+        "UENUM": 0,
+        "UINTERFACE": 1,
+        "UFUNCTION": 5,
+        "UPROPERTY": 0
+      },
+      "includes": [
+        "CoreMinimal.h",
+        "DARKSTARVE/Objects/EObjectState.h",
+        "ObjectAttributeInterface.generated.h"
+      ]
+    },
+    "DARKSTARVE/Objects/Interfaces/ObjectUIInterface.h": {
+      "classes": [
+        {
+          "name": "UObjectUIInterface",
+          "base": "UInterface"
+        },
+        {
+          "name": "holds",
+          "base": ""
+        },
+        {
+          "name": "IObjectUIInterface",
+          "base": "IInterface"
+        }
+      ],
+      "structs": [],
+      "enums": [],
+      "unreal_macros": {
+        "UCLASS": 0,
+        "USTRUCT": 0,
+        "UENUM": 0,
+        "UINTERFACE": 1,
+        "UFUNCTION": 2,
+        "UPROPERTY": 0
+      },
+      "includes": [
+        "CoreMinimal.h",
+        "GameFramework/Actor.h",
+        "UObject/Interface.h",
+        "Components/SlateWrapperTypes.h",
+        "ObjectUIInterface.generated.h"
+      ]
+    },
+    "DARKSTARVE/Objects/ObjectBase.cpp": {
+      "classes": [
+        {
+          "name": "EObjectState",
+          "base": "uint8"
+        }
+      ],
+      "structs": [],
+      "enums": [
+        "EObjectState"
+      ],
+      "unreal_macros": {
+        "UCLASS": 0,
+        "USTRUCT": 0,
+        "UENUM": 0,
+        "UINTERFACE": 0,
+        "UFUNCTION": 0,
+        "UPROPERTY": 0
+      },
+      "includes": [
+        "DARKSTARVE/Objects/ObjectBase.h",
+        "Components/SlateWrapperTypes.h",
+        "Components/StaticMeshComponent.h",
+        "Components/SkeletalMeshComponent.h",
+        "Components/SphereComponent.h",
+        "Components/BoxComponent.h",
+        "DARKSTARVE/Systems/MainController.h",
+        "GameFramework/GameSession.h",
+        "GameFramework/PlayerController.h",
+        "Interfaces/ObjectUIInterface.h",
+        "Kismet/GameplayStatics.h",
+        "GameFramework/Actor.h",
+        "DARKSTARVE/Objects/EObjectState.h"
+      ]
+    },
+    "DARKSTARVE/Objects/ObjectBase.h": {
+      "classes": [
+        {
+          "name": "UStaticMeshComponent",
+          "base": ""
+        },
+        {
+          "name": "USkeletalMeshComponent",
+          "base": ""
+        },
+        {
+          "name": "USphereComponent",
+          "base": ""
+        },
+        {
+          "name": "UBoxComponent",
+          "base": ""
+        },
+        {
+          "name": "for",
+          "base": ""
+        },
+        {
+          "name": "AObjectBase",
+          "base": "AActor"
+        }
+      ],
+      "structs": [],
+      "enums": [],
+      "unreal_macros": {
+        "UCLASS": 1,
+        "USTRUCT": 0,
+        "UENUM": 0,
+        "UINTERFACE": 0,
+        "UFUNCTION": 8,
+        "UPROPERTY": 16
+      },
+      "includes": [
+        "CoreMinimal.h",
+        "DARKSTARVE/Systems/MainController.h",
+        "GameFramework/Actor.h",
+        "Components/SlateWrapperTypes.h",
+        "DARKSTARVE/Data/ObjectBaseData.h",
+        "DARKSTARVE/Objects/EItemType.h",
+        "DARKSTARVE/Objects/EObjectState.h",
+        "ObjectBase.generated.h"
+      ]
+    },
+    "DARKSTARVE/Players/AvatarSave.h": {
+      "classes": [
+        {
+          "name": "UAvatarSave",
+          "base": "USaveGame"
+        }
+      ],
+      "structs": [],
+      "enums": [],
+      "unreal_macros": {
+        "UCLASS": 1,
+        "USTRUCT": 0,
+        "UENUM": 0,
+        "UINTERFACE": 0,
+        "UFUNCTION": 0,
+        "UPROPERTY": 1
+      },
+      "includes": [
+        "CoreMinimal.h",
+        "GameFramework/SaveGame.h",
+        "DARKSTARVE/Clothing/FSkinAsset.h",
+        "AvatarSave.generated.h"
+      ]
+    },
+    "DARKSTARVE/Players/MainPlayerState.cpp": {
+      "classes": [],
+      "structs": [],
+      "enums": [],
+      "unreal_macros": {
+        "UCLASS": 0,
+        "USTRUCT": 0,
+        "UENUM": 0,
+        "UINTERFACE": 0,
+        "UFUNCTION": 0,
+        "UPROPERTY": 0
+      },
+      "includes": [
+        "MainPlayerState.h",
+        "DARKSTARVE/Systems/Interface/UMGInterface.h",
+        "GameFramework/PlayerController.h",
+        "DARKSTARVE/Objects/Interfaces/ContainerInterface.h"
+      ]
+    },
+    "DARKSTARVE/Players/MainPlayerState.h": {
+      "classes": [
+        {
+          "name": "AMainPlayerState",
+          "base": "APlayerState, public IContainerInterface"
+        }
+      ],
+      "structs": [],
+      "enums": [],
+      "unreal_macros": {
+        "UCLASS": 1,
+        "USTRUCT": 0,
+        "UENUM": 0,
+        "UINTERFACE": 0,
+        "UFUNCTION": 3,
+        "UPROPERTY": 3
+      },
+      "includes": [
+        "Components/SceneComponent.h",
+        "DARKSTARVE/Clothing/FSkinAsset.h",
+        "DARKSTARVE/Objects/ContainerComponent.h",
+        "DARKSTARVE/Objects/FContainer.h",
+        "DARKSTARVE/Objects/Interfaces/ContainerInterface.h",
+        "GameFramework/PlayerState.h",
+        "MainPlayerState.generated.h"
+      ]
+    },
+    "DARKSTARVE/Systems/DebugCommandManager.cpp": {
+      "classes": [],
+      "structs": [],
+      "enums": [],
+      "unreal_macros": {
+        "UCLASS": 0,
+        "USTRUCT": 0,
+        "UENUM": 0,
+        "UINTERFACE": 0,
+        "UFUNCTION": 0,
+        "UPROPERTY": 0
+      },
+      "includes": [
+        "DebugCommandManager.h",
+        "Engine/Engine.h",
+        "Engine/World.h",
+        "HAL/IConsoleManager.h"
+      ]
+    },
+    "DARKSTARVE/Systems/DebugCommandManager.h": {
+      "classes": [
+        {
+          "name": "UDebugCommandManager",
+          "base": "UObject"
+        }
+      ],
+      "structs": [],
+      "enums": [],
+      "unreal_macros": {
+        "UCLASS": 1,
+        "USTRUCT": 0,
+        "UENUM": 0,
+        "UINTERFACE": 0,
+        "UFUNCTION": 0,
+        "UPROPERTY": 1
+      },
+      "includes": [
+        "CoreMinimal.h",
+        "UObject/NoExportTypes.h",
+        "DebugCommandManager.generated.h"
+      ]
+    },
+    "DARKSTARVE/Systems/EHUDMode.h": {
+      "classes": [
+        {
+          "name": "EHUDMode",
+          "base": "uint8"
+        }
+      ],
+      "structs": [],
+      "enums": [
+        "EHUDMode"
+      ],
+      "unreal_macros": {
+        "UCLASS": 0,
+        "USTRUCT": 0,
+        "UENUM": 1,
+        "UINTERFACE": 0,
+        "UFUNCTION": 0,
+        "UPROPERTY": 0
+      },
+      "includes": [
+        "CoreMinimal.h",
+        "EHUDMode.generated.h"
+      ]
+    },
+    "DARKSTARVE/Systems/GameInstanceSteam.cpp": {
+      "classes": [],
+      "structs": [],
+      "enums": [],
+      "unreal_macros": {
+        "UCLASS": 0,
+        "USTRUCT": 0,
+        "UENUM": 0,
+        "UINTERFACE": 0,
+        "UFUNCTION": 0,
+        "UPROPERTY": 2
+      },
+      "includes": [
+        "GameInstanceSteam.h"
+      ]
+    },
+    "DARKSTARVE/Systems/GameInstanceSteam.h": {
+      "classes": [
+        {
+          "name": "UGameInstanceSteam",
+          "base": "UAdvancedFriendsGameInstance"
+        }
+      ],
+      "structs": [],
+      "enums": [],
+      "unreal_macros": {
+        "UCLASS": 1,
+        "USTRUCT": 0,
+        "UENUM": 0,
+        "UINTERFACE": 0,
+        "UFUNCTION": 0,
+        "UPROPERTY": 3
+      },
+      "includes": [
+        "CoreMinimal.h",
+        "AdvancedFriendsGameInstance.h",
+        "DARKSTARVE/Clothing/FClothing.h",
+        "DebugCommandManager.h",
+        "GameInstanceSteam.generated.h"
+      ]
+    },
+    "DARKSTARVE/Systems/GameStateMain.cpp": {
+      "classes": [],
+      "structs": [],
+      "enums": [],
+      "unreal_macros": {
+        "UCLASS": 0,
+        "USTRUCT": 0,
+        "UENUM": 0,
+        "UINTERFACE": 0,
+        "UFUNCTION": 0,
+        "UPROPERTY": 0
+      },
+      "includes": [
+        "GameStateMain.h"
+      ]
+    },
+    "DARKSTARVE/Systems/GameStateMain.h": {
+      "classes": [
+        {
+          "name": "AGameStateMain",
+          "base": "AGameStateBase"
+        }
+      ],
+      "structs": [],
+      "enums": [],
+      "unreal_macros": {
+        "UCLASS": 1,
+        "USTRUCT": 0,
+        "UENUM": 0,
+        "UINTERFACE": 0,
+        "UFUNCTION": 0,
+        "UPROPERTY": 0
+      },
+      "includes": [
+        "CoreMinimal.h",
+        "GameFramework/GameStateBase.h",
+        "GameStateMain.generated.h"
+      ]
+    },
+    "DARKSTARVE/Systems/Interface/UMGInterface.h": {
+      "classes": [
+        {
+          "name": "UUMGInterface",
+          "base": "UInterface"
+        },
+        {
+          "name": "holds",
+          "base": ""
+        },
+        {
+          "name": "IUMGInterface",
+          "base": "IInterface"
+        }
+      ],
+      "structs": [],
+      "enums": [],
+      "unreal_macros": {
+        "UCLASS": 0,
+        "USTRUCT": 0,
+        "UENUM": 0,
+        "UINTERFACE": 1,
+        "UFUNCTION": 5,
+        "UPROPERTY": 0
+      },
+      "includes": [
+        "CoreMinimal.h",
+        "DARKSTARVE/Data/ObjectBaseData.h",
+        "Engine/Texture2D.h",
+        "UObject/Interface.h",
+        "Components/SlateWrapperTypes.h",
+        "UMGInterface.generated.h"
+      ]
+    },
+    "DARKSTARVE/Systems/MainController.cpp": {
+      "classes": [],
+      "structs": [],
+      "enums": [],
+      "unreal_macros": {
+        "UCLASS": 0,
+        "USTRUCT": 0,
+        "UENUM": 0,
+        "UINTERFACE": 0,
+        "UFUNCTION": 0,
+        "UPROPERTY": 0
+      },
+      "includes": [
+        "MainController.h",
+        "Blueprint/UserWidget.h",
+        "DARKSTARVE/Systems/Interface/UMGInterface.h",
+        "GameFramework/PlayerController.h",
+        "GameFramework/PlayerStart.h",
+        "DARKSTARVE/Players/AvatarSave.h",
+        "DARKSTARVE/Players/MainPlayerState.h",
+        "DARKSTARVE/Systems/MainController.h",
+        "Engine/LocalPlayer.h",
+        "EnhancedInputSubsystems.h",
+        "Kismet/GameplayStatics.h",
+        "Subsystems/Subsystem.h",
+        "Templates/SharedPointer.h"
+      ]
+    },
+    "DARKSTARVE/Systems/MainController.h": {
+      "classes": [
+        {
+          "name": "UInputMappingContext",
+          "base": ""
+        },
+        {
+          "name": "APawn",
+          "base": ""
+        },
+        {
+          "name": "AMainController",
+          "base": "APlayerController , public IObjectUIInterface , public IUMGInterface"
+        }
+      ],
+      "structs": [],
+      "enums": [],
+      "unreal_macros": {
+        "UCLASS": 1,
+        "USTRUCT": 0,
+        "UENUM": 0,
+        "UINTERFACE": 0,
+        "UFUNCTION": 2,
+        "UPROPERTY": 9
+      },
+      "includes": [
+        "CoreMinimal.h",
+        "DARKSTARVE/Data/ObjectBaseData.h",
+        "DARKSTARVE/Data/ObjectPlantData.h",
+        "DARKSTARVE/Objects/EItemType.h",
+        "DARKSTARVE/Objects/Interfaces/ObjectUIInterface.h",
+        "DARKSTARVE/Systems/Interface/UMGInterface.h",
+        "Delegates/DelegateCombinations.h",
+        "GameFramework/PlayerController.h",
+        "Blueprint/UserWidget.h",
+        "Layout/Visibility.h",
+        "UObject/ObjectPtr.h",
+        "DARKSTARVE/Players/AvatarSave.h",
+        "DARKSTARVE\\Systems\\EHUDMode.h",
+        "MainController.generated.h"
+      ]
+    },
+    "DARKSTARVE/Systems/MainGameMode.cpp": {
+      "classes": [],
+      "structs": [],
+      "enums": [],
+      "unreal_macros": {
+        "UCLASS": 0,
+        "USTRUCT": 0,
+        "UENUM": 0,
+        "UINTERFACE": 0,
+        "UFUNCTION": 0,
+        "UPROPERTY": 0
+      },
+      "includes": [
+        "MainGameMode.h",
+        "DARKSTARVE/Players/MainPlayerState.h",
+        "GameStateMain.h",
+        "MainController.h"
+      ]
+    },
+    "DARKSTARVE/Systems/MainGameMode.h": {
+      "classes": [
+        {
+          "name": "AMainPlayerState",
+          "base": ""
+        },
+        {
+          "name": "AGameStateMain",
+          "base": ""
+        },
+        {
+          "name": "AMainController",
+          "base": ""
+        },
+        {
+          "name": "AMainGameMode",
+          "base": "AGameModeBase"
+        }
+      ],
+      "structs": [],
+      "enums": [],
+      "unreal_macros": {
+        "UCLASS": 1,
+        "USTRUCT": 0,
+        "UENUM": 0,
+        "UINTERFACE": 0,
+        "UFUNCTION": 0,
+        "UPROPERTY": 0
+      },
+      "includes": [
+        "CoreMinimal.h",
+        "GameFramework/GameModeBase.h",
+        "MainGameMode.generated.h"
+      ]
+    }
+  },
+  "include_graph": {
+    "DARKSTARVE/Characters/Components/AttributeComponent.cpp": [
+      "AttributeComponent.h",
+      "Math/UnrealMath.h"
+    ],
+    "DARKSTARVE/Characters/Components/AttributeComponent.h": [
+      "CoreMinimal.h",
+      "Components/ActorComponent.h",
+      "AttributeComponent.generated.h"
+    ],
+    "DARKSTARVE/Characters/Components/CombatComponent.cpp": [
+      "CombatComponent.h"
+    ],
+    "DARKSTARVE/Characters/Components/CombatComponent.h": [
+      "CoreMinimal.h",
+      "Components/ActorComponent.h",
+      "StateMotionComponent.h",
+      "DARKSTARVE/Characters/EWeaponMode.h",
+      "CombatComponent.generated.h"
+    ],
+    "DARKSTARVE/Characters/Components/SkinsHandleComponent.cpp": [
+      "SkinsHandleComponent.h",
+      "Kismet/GameplayStatics.h",
+      "DARKSTARVE/Systems/GameInstanceSteam.h"
+    ],
+    "DARKSTARVE/Characters/Components/SkinsHandleComponent.h": [
+      "CoreMinimal.h",
+      "Components/ActorComponent.h",
+      "DARKSTARVE/Clothing/FClothing.h",
+      "DARKSTARVE/Clothing/FSkinAsset.h",
+      "DARKSTARVE/Clothing/EBodySlot.h",
+      "Engine/DataTable.h",
+      "SkinsHandleComponent.generated.h"
+    ],
+    "DARKSTARVE/Characters/Components/StateMotionComponent.cpp": [
+      "StateMotionComponent.h",
+      "AlphaBlend.h",
+      "PlayMontageCallbackProxy.h",
+      "GameFramework/Character.h",
+      "GameFramework/CharacterMovementComponent.h"
+    ],
+    "DARKSTARVE/Characters/Components/StateMotionComponent.h": [
+      "CoreMinimal.h",
+      "Components/ActorComponent.h",
+      "DARKSTARVE/Characters/Interfaces/MotionInterface.h",
+      "GameFramework/Character.h",
+      "GameFramework/CharacterMovementComponent.h",
+      "Animation/AnimMontage.h",
+      "Animation/AnimInstance.h",
+      "DARKSTARVE/Characters/ELocomotion.h",
+      "StateMotionComponent.generated.h"
+    ],
+    "DARKSTARVE/Characters/ECharacterState.h": [
+      "CoreMinimal.h",
+      "ECharacterState.generated.h"
+    ],
+    "DARKSTARVE/Characters/ELocomotion.h": [
+      "CoreMinimal.h",
+      "ELocomotion.generated.h"
+    ],
+    "DARKSTARVE/Characters/EWeaponMode.h": [
+      "CoreMinimal.h",
+      "EWeaponMode.generated.h"
+    ],
+    "DARKSTARVE/Characters/Interfaces/ActionInterface.h": [
+      "CoreMinimal.h",
+      "Components/SceneComponent.h",
+      "DARKSTARVE/Objects/FContainer.h",
+      "ActionInterface.generated.h"
+    ],
+    "DARKSTARVE/Characters/Interfaces/InputKeyInterface.h": [
+      "CoreMinimal.h",
+      "DARKSTARVE/Characters/EWeaponMode.h",
+      "InputKeyInterface.generated.h"
+    ],
+    "DARKSTARVE/Characters/Interfaces/MotionInterface.h": [
+      "CoreMinimal.h",
+      "DARKSTARVE/Characters/ELocomotion.h",
+      "MotionInterface.generated.h"
+    ],
+    "DARKSTARVE/Characters/PlayerCharacterMaster.cpp": [
+      "PlayerCharacterMaster.h",
+      "Components/CapsuleComponent.h",
+      "DARKSTARVE/Characters/ECharacterState.h",
+      "DARKSTARVE/Objects/Interfaces/ObjectAttributeInterface.h",
+      "DARKSTARVE/Players/MainPlayerState.h",
+      "ECharacterState.h",
+      "Engine/EngineTypes.h",
+      "Math/MathFwd.h",
+      "Math/RotationMatrix.h",
+      "UObject/UnrealNames.h"
+    ],
+    "DARKSTARVE/Characters/PlayerCharacterMaster.h": [
+      "CoreMinimal.h",
+      "GameFramework/Character.h",
+      "Camera/CameraComponent.h",
+      "GameFramework/SpringArmComponent.h",
+      "Components/BillboardComponent.h",
+      "Components/ChildActorComponent.h",
+      "Components/SkeletalMeshComponent.h",
+      "DARKSTARVE/Characters/ECharacterState.h",
+      "DARKSTARVE/Characters/Interfaces/ActionInterface.h",
+      "DARKSTARVE/Characters/Interfaces/InputKeyInterface.h",
+      "DARKSTARVE/Characters/Components/StateMotionComponent.h",
+      "DARKSTARVE/Characters/Components/AttributeComponent.h",
+      "DARKSTARVE/Characters/Components/CombatComponent.h",
+      "DARKSTARVE/Characters/Components/SkinsHandleComponent.h",
+      "PlayerCharacterMaster.generated.h"
+    ],
+    "DARKSTARVE/Clothing/EBodySlot.h": [
+      "CoreMinimal.h",
+      "EBodySlot.generated.h"
+    ],
+    "DARKSTARVE/Clothing/FClothing.h": [
+      "CoreMinimal.h",
+      "Engine/DataTable.h",
+      "EBodySlot.h",
+      "FClothing.generated.h"
+    ],
+    "DARKSTARVE/Clothing/FSkinAsset.h": [
+      "CoreMinimal.h",
+      "Engine/DataTable.h",
+      "EBodySlot.h",
+      "FSkinAsset.generated.h"
+    ],
+    "DARKSTARVE/DARKSTARVE.cpp": [
+      "DARKSTARVE.h",
+      "Modules/ModuleManager.h"
+    ],
+    "DARKSTARVE/DARKSTARVE.h": [
+      "CoreMinimal.h"
+    ],
+    "DARKSTARVE/Data/GameConfigData.h": [
+      "CoreMinimal.h",
+      "Engine/DataAsset.h",
+      "GameConfigData.generated.h"
+    ],
+    "DARKSTARVE/Data/ObjectBaseData.h": [
+      "CoreMinimal.h",
+      "Engine/DataAsset.h",
+      "../Objects/EItemType.h",
+      "ObjectBaseData.generated.h"
+    ],
+    "DARKSTARVE/Data/ObjectContainerData.h": [
+      "CoreMinimal.h",
+      "Containers/Map.h",
+      "Templates/SubclassOf.h",
+      "DARKSTARVE/Objects/FContainer.h",
+      "ObjectInteractData.h",
+      "ObjectContainerData.generated.h"
+    ],
+    "DARKSTARVE/Data/ObjectInteractData.h": [
+      "CoreMinimal.h",
+      "Engine/DataAsset.h",
+      "ObjectBaseData.h",
+      "ObjectInteractData.generated.h"
+    ],
+    "DARKSTARVE/Data/ObjectPlantData.h": [
+      "CoreMinimal.h",
+      "ObjectContainerData.h",
+      "ObjectPlantData.generated.h"
+    ],
+    "DARKSTARVE/Objects/ContainerComponent.cpp": [
+      "ContainerComponent.h",
+      "ObjectBase.h"
+    ],
+    "DARKSTARVE/Objects/ContainerComponent.h": [
+      "CoreMinimal.h",
+      "Components/ActorComponent.h",
+      "FContainer.h",
+      "ContainerComponent.generated.h"
+    ],
+    "DARKSTARVE/Objects/EItemType.h": [
+      "CoreMinimal.h",
+      "EItemType.generated.h"
+    ],
+    "DARKSTARVE/Objects/EObjectState.h": [
+      "CoreMinimal.h",
+      "EObjectState.generated.h"
+    ],
+    "DARKSTARVE/Objects/FContainer.h": [
+      "CoreMinimal.h",
+      "Engine/DataTable.h",
+      "DARKSTARVE/Data/ObjectBaseData.h",
+      "FContainer.generated.h"
+    ],
+    "DARKSTARVE/Objects/Instances/ObjectFarmPlot.cpp": [
+      "ObjectFarmPlot.h",
+      "Blueprint/UserWidget.h",
+      "Components/SlateWrapperTypes.h",
+      "DARKSTARVE/Objects/Interfaces/ObjectAttributeInterface.h",
+      "DARKSTARVE/Systems/EHUDMode.h",
+      "DARKSTARVE/Systems/MainController.h",
+      "Kismet/GameplayStatics.h",
+      "ObjectPlant.h"
+    ],
+    "DARKSTARVE/Objects/Instances/ObjectFarmPlot.h": [
+      "CoreMinimal.h",
+      "GameFramework/Actor.h",
+      "DARKSTARVE/Objects/Instances/ObjectInteract.h",
+      "ObjectPlant.h",
+      "Templates/SubclassOf.h",
+      "ObjectFarmPlot.generated.h"
+    ],
+    "DARKSTARVE/Objects/Instances/ObjectFurniture.cpp": [
+      "ObjectFurniture.h",
+      "Components/ActorComponent.h",
+      "Components/BoxComponent.h",
+      "Components/PrimitiveComponent.h",
+      "DARKSTARVE/Characters/Interfaces/ActionInterface.h",
+      "DARKSTARVE/Objects/EObjectState.h",
+      "Engine/EngineTypes.h",
+      "Math/MathFwd.h",
+      "Components/SphereComponent.h",
+      "UObject/Object.h"
+    ],
+    "DARKSTARVE/Objects/Instances/ObjectFurniture.h": [
+      "DARKSTARVE/Characters/Interfaces/ActionInterface.h",
+      "DARKSTARVE/Objects/Interfaces/ObjectAttributeInterface.h",
+      "DARKSTARVE/Objects/ObjectBase.h",
+      "Materials/MaterialInterface.h",
+      "ObjectInteract.h",
+      "ObjectFurniture.generated.h"
+    ],
+    "DARKSTARVE/Objects/Instances/ObjectInteract.cpp": [
+      "ObjectInteract.h",
+      "DARKSTARVE/Data/ObjectInteractData.h",
+      "Components/ActorComponent.h",
+      "Components/BoxComponent.h",
+      "Components/PrimitiveComponent.h",
+      "DARKSTARVE/Characters/Interfaces/ActionInterface.h",
+      "DARKSTARVE/Objects/EObjectState.h",
+      "Engine/EngineTypes.h",
+      "Math/MathFwd.h",
+      "Components/SphereComponent.h",
+      "UObject/Object.h"
+    ],
+    "DARKSTARVE/Objects/Instances/ObjectInteract.h": [
+      "DARKSTARVE/Characters/Interfaces/ActionInterface.h",
+      "DARKSTARVE/Objects/Interfaces/ObjectAttributeInterface.h",
+      "DARKSTARVE/Objects/ObjectBase.h",
+      "Materials/MaterialInterface.h",
+      "ObjectInteract.generated.h"
+    ],
+    "DARKSTARVE/Objects/Instances/ObjectPickup.cpp": [
+      "ObjectPickup.h",
+      "DARKSTARVE/Data/ObjectContainerData.h",
+      "DARKSTARVE/Objects/ContainerComponent.h",
+      "DARKSTARVE/Objects/FContainer.h",
+      "DARKSTARVE/Players/MainPlayerState.h"
+    ],
+    "DARKSTARVE/Objects/Instances/ObjectPickup.h": [
+      "CoreMinimal.h",
+      "DARKSTARVE/Objects/ContainerComponent.h",
+      "DARKSTARVE/Objects/Instances/ObjectInteract.h",
+      "ObjectPickup.generated.h"
+    ],
+    "DARKSTARVE/Objects/Instances/ObjectPlant.cpp": [
+      "ObjectPlant.h",
+      "Components/MeshComponent.h",
+      "Components/BoxComponent.h",
+      "Components/SphereComponent.h",
+      "DARKSTARVE/Data/ObjectPlantData.h"
+    ],
+    "DARKSTARVE/Objects/Instances/ObjectPlant.h": [
+      "DARKSTARVE/Objects/Instances/ObjectInteract.h",
+      "DARKSTARVE/Data/ObjectPlantData.h",
+      "ObjectInteract.h",
+      "ObjectPlant.generated.h"
+    ],
+    "DARKSTARVE/Objects/Interfaces/ContainerInterface.h": [
+      "CoreMinimal.h",
+      "GameFramework/Actor.h",
+      "ContainerInterface.generated.h"
+    ],
+    "DARKSTARVE/Objects/Interfaces/ObjectAttributeInterface.h": [
+      "CoreMinimal.h",
+      "DARKSTARVE/Objects/EObjectState.h",
+      "ObjectAttributeInterface.generated.h"
+    ],
+    "DARKSTARVE/Objects/Interfaces/ObjectUIInterface.h": [
+      "CoreMinimal.h",
+      "GameFramework/Actor.h",
+      "UObject/Interface.h",
+      "Components/SlateWrapperTypes.h",
+      "ObjectUIInterface.generated.h"
+    ],
+    "DARKSTARVE/Objects/ObjectBase.cpp": [
+      "DARKSTARVE/Objects/ObjectBase.h",
+      "Components/SlateWrapperTypes.h",
+      "Components/StaticMeshComponent.h",
+      "Components/SkeletalMeshComponent.h",
+      "Components/SphereComponent.h",
+      "Components/BoxComponent.h",
+      "DARKSTARVE/Systems/MainController.h",
+      "GameFramework/GameSession.h",
+      "GameFramework/PlayerController.h",
+      "Interfaces/ObjectUIInterface.h",
+      "Kismet/GameplayStatics.h",
+      "GameFramework/Actor.h",
+      "DARKSTARVE/Objects/EObjectState.h"
+    ],
+    "DARKSTARVE/Objects/ObjectBase.h": [
+      "CoreMinimal.h",
+      "DARKSTARVE/Systems/MainController.h",
+      "GameFramework/Actor.h",
+      "Components/SlateWrapperTypes.h",
+      "DARKSTARVE/Data/ObjectBaseData.h",
+      "DARKSTARVE/Objects/EItemType.h",
+      "DARKSTARVE/Objects/EObjectState.h",
+      "ObjectBase.generated.h"
+    ],
+    "DARKSTARVE/Players/AvatarSave.h": [
+      "CoreMinimal.h",
+      "GameFramework/SaveGame.h",
+      "DARKSTARVE/Clothing/FSkinAsset.h",
+      "AvatarSave.generated.h"
+    ],
+    "DARKSTARVE/Players/MainPlayerState.cpp": [
+      "MainPlayerState.h",
+      "DARKSTARVE/Systems/Interface/UMGInterface.h",
+      "GameFramework/PlayerController.h",
+      "DARKSTARVE/Objects/Interfaces/ContainerInterface.h"
+    ],
+    "DARKSTARVE/Players/MainPlayerState.h": [
+      "Components/SceneComponent.h",
+      "DARKSTARVE/Clothing/FSkinAsset.h",
+      "DARKSTARVE/Objects/ContainerComponent.h",
+      "DARKSTARVE/Objects/FContainer.h",
+      "DARKSTARVE/Objects/Interfaces/ContainerInterface.h",
+      "GameFramework/PlayerState.h",
+      "MainPlayerState.generated.h"
+    ],
+    "DARKSTARVE/Systems/DebugCommandManager.cpp": [
+      "DebugCommandManager.h",
+      "Engine/Engine.h",
+      "Engine/World.h",
+      "HAL/IConsoleManager.h"
+    ],
+    "DARKSTARVE/Systems/DebugCommandManager.h": [
+      "CoreMinimal.h",
+      "UObject/NoExportTypes.h",
+      "DebugCommandManager.generated.h"
+    ],
+    "DARKSTARVE/Systems/EHUDMode.h": [
+      "CoreMinimal.h",
+      "EHUDMode.generated.h"
+    ],
+    "DARKSTARVE/Systems/GameInstanceSteam.cpp": [
+      "GameInstanceSteam.h"
+    ],
+    "DARKSTARVE/Systems/GameInstanceSteam.h": [
+      "CoreMinimal.h",
+      "AdvancedFriendsGameInstance.h",
+      "DARKSTARVE/Clothing/FClothing.h",
+      "DebugCommandManager.h",
+      "GameInstanceSteam.generated.h"
+    ],
+    "DARKSTARVE/Systems/GameStateMain.cpp": [
+      "GameStateMain.h"
+    ],
+    "DARKSTARVE/Systems/GameStateMain.h": [
+      "CoreMinimal.h",
+      "GameFramework/GameStateBase.h",
+      "GameStateMain.generated.h"
+    ],
+    "DARKSTARVE/Systems/Interface/UMGInterface.h": [
+      "CoreMinimal.h",
+      "DARKSTARVE/Data/ObjectBaseData.h",
+      "Engine/Texture2D.h",
+      "UObject/Interface.h",
+      "Components/SlateWrapperTypes.h",
+      "UMGInterface.generated.h"
+    ],
+    "DARKSTARVE/Systems/MainController.cpp": [
+      "MainController.h",
+      "Blueprint/UserWidget.h",
+      "DARKSTARVE/Systems/Interface/UMGInterface.h",
+      "GameFramework/PlayerController.h",
+      "GameFramework/PlayerStart.h",
+      "DARKSTARVE/Players/AvatarSave.h",
+      "DARKSTARVE/Players/MainPlayerState.h",
+      "DARKSTARVE/Systems/MainController.h",
+      "Engine/LocalPlayer.h",
+      "EnhancedInputSubsystems.h",
+      "Kismet/GameplayStatics.h",
+      "Subsystems/Subsystem.h",
+      "Templates/SharedPointer.h"
+    ],
+    "DARKSTARVE/Systems/MainController.h": [
+      "CoreMinimal.h",
+      "DARKSTARVE/Data/ObjectBaseData.h",
+      "DARKSTARVE/Data/ObjectPlantData.h",
+      "DARKSTARVE/Objects/EItemType.h",
+      "DARKSTARVE/Objects/Interfaces/ObjectUIInterface.h",
+      "DARKSTARVE/Systems/Interface/UMGInterface.h",
+      "Delegates/DelegateCombinations.h",
+      "GameFramework/PlayerController.h",
+      "Blueprint/UserWidget.h",
+      "Layout/Visibility.h",
+      "UObject/ObjectPtr.h",
+      "DARKSTARVE/Players/AvatarSave.h",
+      "DARKSTARVE\\Systems\\EHUDMode.h",
+      "MainController.generated.h"
+    ],
+    "DARKSTARVE/Systems/MainGameMode.cpp": [
+      "MainGameMode.h",
+      "DARKSTARVE/Players/MainPlayerState.h",
+      "GameStateMain.h",
+      "MainController.h"
+    ],
+    "DARKSTARVE/Systems/MainGameMode.h": [
+      "CoreMinimal.h",
+      "GameFramework/GameModeBase.h",
+      "MainGameMode.generated.h"
+    ]
+  },
+  "categories": {
+    "Characters": [
+      "DARKSTARVE/Characters/Components/AttributeComponent.cpp",
+      "DARKSTARVE/Characters/Components/AttributeComponent.h",
+      "DARKSTARVE/Characters/Components/CombatComponent.cpp",
+      "DARKSTARVE/Characters/Components/CombatComponent.h",
+      "DARKSTARVE/Characters/Components/SkinsHandleComponent.cpp",
+      "DARKSTARVE/Characters/Components/SkinsHandleComponent.h",
+      "DARKSTARVE/Characters/Components/StateMotionComponent.cpp",
+      "DARKSTARVE/Characters/Components/StateMotionComponent.h",
+      "DARKSTARVE/Characters/ECharacterState.h",
+      "DARKSTARVE/Characters/ELocomotion.h",
+      "DARKSTARVE/Characters/EWeaponMode.h",
+      "DARKSTARVE/Characters/Interfaces/ActionInterface.h",
+      "DARKSTARVE/Characters/Interfaces/InputKeyInterface.h",
+      "DARKSTARVE/Characters/Interfaces/MotionInterface.h",
+      "DARKSTARVE/Characters/PlayerCharacterMaster.cpp",
+      "DARKSTARVE/Characters/PlayerCharacterMaster.h"
+    ],
+    "Components": [],
+    "Objects": [
+      "DARKSTARVE/Objects/ContainerComponent.cpp",
+      "DARKSTARVE/Objects/ContainerComponent.h",
+      "DARKSTARVE/Objects/EItemType.h",
+      "DARKSTARVE/Objects/EObjectState.h",
+      "DARKSTARVE/Objects/FContainer.h",
+      "DARKSTARVE/Objects/Instances/ObjectFarmPlot.cpp",
+      "DARKSTARVE/Objects/Instances/ObjectFarmPlot.h",
+      "DARKSTARVE/Objects/Instances/ObjectFurniture.cpp",
+      "DARKSTARVE/Objects/Instances/ObjectFurniture.h",
+      "DARKSTARVE/Objects/Instances/ObjectInteract.cpp",
+      "DARKSTARVE/Objects/Instances/ObjectInteract.h",
+      "DARKSTARVE/Objects/Instances/ObjectPickup.cpp",
+      "DARKSTARVE/Objects/Instances/ObjectPickup.h",
+      "DARKSTARVE/Objects/Instances/ObjectPlant.cpp",
+      "DARKSTARVE/Objects/Instances/ObjectPlant.h",
+      "DARKSTARVE/Objects/Interfaces/ContainerInterface.h",
+      "DARKSTARVE/Objects/Interfaces/ObjectAttributeInterface.h",
+      "DARKSTARVE/Objects/Interfaces/ObjectUIInterface.h",
+      "DARKSTARVE/Objects/ObjectBase.cpp",
+      "DARKSTARVE/Objects/ObjectBase.h"
+    ],
+    "Systems": [
+      "DARKSTARVE/Systems/DebugCommandManager.cpp",
+      "DARKSTARVE/Systems/DebugCommandManager.h",
+      "DARKSTARVE/Systems/EHUDMode.h",
+      "DARKSTARVE/Systems/GameInstanceSteam.cpp",
+      "DARKSTARVE/Systems/GameInstanceSteam.h",
+      "DARKSTARVE/Systems/GameStateMain.cpp",
+      "DARKSTARVE/Systems/GameStateMain.h",
+      "DARKSTARVE/Systems/Interface/UMGInterface.h",
+      "DARKSTARVE/Systems/MainController.cpp",
+      "DARKSTARVE/Systems/MainController.h",
+      "DARKSTARVE/Systems/MainGameMode.cpp",
+      "DARKSTARVE/Systems/MainGameMode.h"
+    ],
+    "Interfaces": [],
+    "Data": [
+      "DARKSTARVE/Data/GameConfigData.h",
+      "DARKSTARVE/Data/ObjectBaseData.h",
+      "DARKSTARVE/Data/ObjectContainerData.h",
+      "DARKSTARVE/Data/ObjectInteractData.h",
+      "DARKSTARVE/Data/ObjectPlantData.h"
+    ],
+    "Players": [
+      "DARKSTARVE/Players/AvatarSave.h",
+      "DARKSTARVE/Players/MainPlayerState.cpp",
+      "DARKSTARVE/Players/MainPlayerState.h"
+    ],
+    "Other": [
+      "DARKSTARVE/Clothing/EBodySlot.h",
+      "DARKSTARVE/Clothing/FClothing.h",
+      "DARKSTARVE/Clothing/FSkinAsset.h",
+      "DARKSTARVE/DARKSTARVE.cpp",
+      "DARKSTARVE/DARKSTARVE.h"
+    ]
+  }
+}
