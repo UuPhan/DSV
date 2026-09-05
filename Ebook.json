@@ -1,0 +1,417 @@
+{
+  "name": "Ebook",
+  "nodes": [
+    {
+      "parameters": {
+        "fileSelector": "/home/node/.n8n-files/Approaches to Digital Game Studies - M. J. Clarke_ Cynthia Wang - Indie Games in the Digital Age - Bloomsbury Publishing 2020.pdf",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [
+        -752,
+        352
+      ],
+      "id": "4a636371-8de2-4960-bcdb-d5a40cf7e85c",
+      "name": "Read/Write Files from Disk"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -960,
+        352
+      ],
+      "id": "84d41fcb-c3fe-4066-9a40-de74a4a36490",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "jsCode": "const fullText = $input.first().json.text || '';\nconst totalLength = fullText.length;\n\n// 1. Tìm từ khóa Mục lục\nconst tocRegex = /(?:table\\s+of\\s+contents|mục\\s+lục|^contents$)/i;\nconst tocMatch = fullText.match(tocRegex);\n\nif (!tocMatch) {\n  // Không tìm thấy từ khóa -> Mặc định cắt 15,000 ký tự đầu sách\n  return [{\n    json: {\n      tocText: fullText.substring(0, 15000).trim(),\n      method: \"Fallback (No TOC Keyword Found)\",\n      isBackToc: false\n    }\n  }];\n}\n\nconst tocStartIndex = tocMatch.index;\n\n// 2. Kiểm tra vị trí: Mục lục nằm ở nửa đầu hay nửa cuối sách?\nconst isBackToc = tocStartIndex > (totalLength * 0.5);\n\nlet exactTocText = '';\nlet method = '';\n\nif (isBackToc) {\n  // === TRƯỜNG HỢP A: MỤC LỤC Ở CUỐI SÁCH ===\n  // Chỉ cần lấy từ vị trí \"Table of Contents\" kéo dài 15,000 ký tự về sau (hoặc đến hết sách)\n  exactTocText = fullText.substring(tocStartIndex, tocStartIndex + 15000);\n  method = \"Back TOC (Extracted from second half of PDF)\";\n\n} else {\n  // === TRƯỜNG HỢP B: MỤC LỤC Ở ĐẦU SÁCH (Phổ biến) ===\n  const textFromToc = fullText.substring(tocStartIndex);\n  const startKeywords = [\n    'Introduction', \n    'Chapter 1', \n    'Chương 1', \n    'Lời nói đầu', \n    'PREFACE', \n    '1. Introduction'\n  ];\n  \n  let tocEndIndex = -1;\n  let matchedKeyword = '';\n\n  for (const kw of startKeywords) {\n    const regex = new RegExp(kw.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&'), 'gi');\n    const matches = [...textFromToc.matchAll(regex)];\n\n    // Nếu từ khóa xuất hiện từ 2 lần trở lên\n    if (matches.length >= 2) {\n      tocEndIndex = tocStartIndex + matches[1].index;\n      matchedKeyword = kw;\n      break;\n    }\n  }\n\n  if (tocEndIndex !== -1) {\n    exactTocText = fullText.substring(tocStartIndex, tocEndIndex);\n    method = `Front TOC Exact Cut (End keyword: ${matchedKeyword})`;\n  } else {\n    exactTocText = fullText.substring(tocStartIndex, tocStartIndex + 12000);\n    method = \"Front TOC Safe Cut\";\n  }\n}\n\nreturn [{\n  json: {\n    tocText: exactTocText.trim(),\n    method: method,\n    isBackToc: isBackToc,\n    length: exactTocText.length\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -160,
+        -16
+      ],
+      "id": "21d04a2e-b326-4c79-8a61-ce36386beaef",
+      "name": "Extract TOC"
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        -560,
+        352
+      ],
+      "id": "17a02442-197a-40ad-9302-11723341ac49",
+      "name": "Read PDF"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Lấy toàn bộ văn bản PDF từ node trước\nlet fullText = $input.first().json.text || '';\n\nif (!fullText) {\n  return [{ json: { error: \"Không tìm thấy biến 'text' chứa nội dung PDF từ node trước.\" } }];\n}\n\n// Chuẩn hóa xuống dòng\nfullText = fullText.replace(/\\\\n/g, '\\n').replace(/\\r/g, '');\n\n// 2. Cấu hình thông số Chunking (Tối ưu cho Context 8k)\nconst CHUNK_SIZE = 12000; // ~3,000 tokens\nconst OVERLAP = 500;     // ~125 tokens gối đầu để không bị đứt đoạn ý\n\nconst items = [];\nlet start = 0;\nlet chunkIndex = 1;\n\n// 3. Thuật toán cắt văn bản thông minh (Smart Breaking)\nwhile (start < fullText.length) {\n  let end = start + CHUNK_SIZE;\n\n  if (end >= fullText.length) {\n    end = fullText.length;\n  } else {\n    // Tìm điểm ngắt tự nhiên (đoạn văn \\n\\n, xuống dòng \\n, hoặc cuối câu . )\n    // Tránh việc bị xén ngang một từ hoặc một câu văn\n    const slice = fullText.substring(start, end);\n    let breakPoint = slice.lastIndexOf('\\n\\n');\n    \n    if (breakPoint === -1 || breakPoint < CHUNK_SIZE * 0.7) {\n      breakPoint = slice.lastIndexOf('\\n');\n    }\n    if (breakPoint === -1 || breakPoint < CHUNK_SIZE * 0.7) {\n      breakPoint = slice.lastIndexOf('. ');\n    }\n    if (breakPoint !== -1 && breakPoint > CHUNK_SIZE * 0.5) {\n      end = start + breakPoint + 1;\n    }\n  }\n\n  const chunkContent = fullText.substring(start, end).trim();\n\n  if (chunkContent.length > 0) {\n    items.push({\n      json: {\n        chunkIndex: chunkIndex,\n        content: chunkContent,\n        charLength: chunkContent.length\n      }\n    });\n    chunkIndex++;\n  }\n\n  if (end >= fullText.length) break;\n  // Dịch chuyển vị trí bắt đầu cho chunk sau (có tính gối đầu OVERLAP)\n  start = end - OVERLAP;\n}\n\n// 4. Gán tổng số chunk vào từng item để dễ theo dõi\nconst totalChunks = items.length;\nreturn items.map(item => {\n  item.json.totalChunks = totalChunks;\n  return item;\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -176,
+        352
+      ],
+      "id": "688ebd3b-074a-4d53-91dc-c4af92e6f86f",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "output"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        464,
+        352
+      ],
+      "id": "037aa5fc-c607-4560-b6df-6dfe2c3a3e7d",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gemma-4-e4b",
+          "mode": "id"
+        },
+        "responsesApiEnabled": false,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        128,
+        576
+      ],
+      "id": "c5c4f719-7f12-48a7-94c8-28395d7d771e",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "b4omVItc7vVKODMH",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "toText",
+        "sourceProperty": "content",
+        "options": {
+          "encoding": "utf8"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        1392,
+        112
+      ],
+      "id": "adc67399-0d11-45f0-92c7-1fb27f0721a5",
+      "name": "Convert to File"
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "=/home/node/.n8n-files/{{ $('Manual Header').item.json.fileName }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [
+        1648,
+        112
+      ],
+      "id": "4eaec01b-f722-4108-9162-2878e9d62dab",
+      "name": "Read/Write Files from Disk1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Lấy dữ liệu đã gom từ node Aggregate\nconst rawData = $input.first().json.output;\n\n// Chuẩn hóa thành chuỗi văn bản duy nhất\nconst combinedText = Array.isArray(rawData) ? rawData.join(\"\\n\\n---\\n\\n\") : String(rawData);\n\nconst charCount = combinedText.length;\nconst wordCount = combinedText.trim().split(/\\s+/).length;\n\n// Ước tính số token (mỗi token ~ 2.8 ký tự tiếng Việt)\nconst estimatedTokens = Math.ceil(charCount / 2.8);\n\n// Kiểm tra ngưỡng an toàn cho Context Window 8k (cho phép tối đa 5000 tokens input)\nconst isSafe = estimatedTokens <= 5000;\n\nreturn [{\n  json: {\n    charCount: charCount,\n    wordCount: wordCount,\n    estimatedTokens: estimatedTokens,\n    isSafeFor8kContext: isSafe,\n    status: isSafe ? \"✅ AN TOÀN: Đưa sang Node LLM cuối\" : \"⚠️ CẢNH BÁO: Quá dài cho 8k context!\",\n    text: combinedText\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        704,
+        352
+      ],
+      "id": "35d2790b-1e93-47bf-8395-72780adcc0f9",
+      "name": "Calculate Tokens"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Lấy toàn bộ dữ liệu từ Node LLM Metadata\nconst llmItem = $('LLM Metadata').first().json;\n\n// Tìm chuỗi dữ liệu trong các trường phổ biến của n8n AI Nodes\nlet rawLlOutput = llmItem.output ?? llmItem.text ?? llmItem.response ?? llmItem.message?.content ?? llmItem;\n\n// Giá trị mặc định\nlet metadata = { \n  description: \"Bản tổng hợp chi tiết từ cuốn sách.\", \n  tags: [\"book-summary\", \"knowledge-base\"] \n};\n\nlet debugStatus = \"OK\";\n\nif (typeof rawLlOutput === 'object' && rawLlOutput !== null) {\n  // Trường hợp n8n đã tự động parse thành Object từ trước\n  if (rawLlOutput.description) metadata.description = rawLlOutput.description;\n  if (Array.isArray(rawLlOutput.tags)) metadata.tags = rawLlOutput.tags;\n  debugStatus = \"Thành công (Đã là Object)\";\n} else if (typeof rawLlOutput === 'string') {\n  // Trích xuất chính xác đoạn chuỗi nằm giữa cặp dấu { và }\n  const jsonMatch = rawLlOutput.match(/\\{[\\s\\S]*\\}/);\n  if (jsonMatch) {\n    try {\n      const parsed = JSON.parse(jsonMatch[0]);\n      if (parsed.description) metadata.description = parsed.description;\n      if (Array.isArray(parsed.tags)) metadata.tags = parsed.tags;\n      debugStatus = \"Thành công (Parse từ JSON String)\";\n    } catch (e) {\n      debugStatus = `Lỗi JSON.parse: ${e.message}`;\n    }\n  } else {\n    debugStatus = \"Lỗi: LLM không trả về chuỗi có cấu trúc dạng { ... }\";\n  }\n} else {\n  debugStatus = \"Lỗi: Dữ liệu từ Node LLM Metadata bị rỗng\";\n}\n\n// Chuyển mảng tags thành dạng chuẩn YAML\nconst yamlTags = JSON.stringify(metadata.tags);\n\n// 2. Lấy danh sách tóm tắt từ Node Aggregate\nconst aggregateJson = $('Aggregate').first().json;\nconst rawSummaries = aggregateJson.text || aggregateJson.content || $input.first().json.text || [];\nconst summaries = Array.isArray(rawSummaries) ? rawSummaries : [rawSummaries];\n\n// 3. Lấy Tiêu đề sách từ Node Read PDF\nconst bookTitle = $('Read PDF').first().json.Title || $('Read PDF').first().json.info?.Title || $('Read/Write Files from Disk').first().json.fileName || \"Game Project Completed\";\n\n// Dọn dẹp tên file an toàn\nconst safeFileName = bookTitle.replace(/[/\\\\?%*:|\"<>]/g, '_');\nconst fileName = safeFileName.endsWith('.md') ? safeFileName : `${safeFileName}.md`;\n\n// 4. Tạo YAML Frontmatter\nconst yamlHeader = `---\ntitle: \"${bookTitle}\"\ndescription: \"${metadata.description}\"\ntags: ${yamlTags}\ndate: \"${new Date().toISOString().split('T')[0]}\"\nlanguage: vi\n---\n\n`;\n\n// 5. Ghép toàn bộ nội dung Markdown\nconst fullMarkdown = yamlHeader + summaries.map((chunkText, idx) => `## Phần ${idx + 1}\\n\\n${chunkText}`).join('\\n\\n---\\n\\n');\n\nreturn [{\n  json: {\n    fileName: fileName,\n    content: fullMarkdown,\n    totalChunksProcessed: summaries.length,\n    // --- Bổ sung 2 thuộc tính để kiểm tra trực tiếp trên UI của n8n ---\n    debugStatus: debugStatus,\n    debugRawLLMOutput: rawLlOutput\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1152,
+        112
+      ],
+      "id": "187fa5ec-f287-45ec-8073-412c122000a2",
+      "name": "Manual Header"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gemma-4-e4b",
+          "mode": "id"
+        },
+        "responsesApiEnabled": false,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        128,
+        208
+      ],
+      "id": "06df3ba0-3364-4e26-aa56-73808008306a",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "b4omVItc7vVKODMH",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch",
+        "useDataOfInput": 2
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        912,
+        112
+      ],
+      "id": "0b12901a-5547-4bdc-817f-f94845bb3ead",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a metadata extraction system for a Knowledge Base. Analyze the following Table of Contents / Book Overview:\n\n<book_info>\n{{ $json.tocText }}\n</book_info>\n\n### TASK:\n1. Write a short, highly informative description (1 concise sentence, 20-30 words max, in VIETNAMESE) summarizing what this book teaches.\n2. Select EXACTLY 5 relevant, high-value tags representing the core domain, methodologies, and audience.\n\n### CRITICAL REQUIREMENTS:\n- OUTPUT STRICTLY A VALID JSON OBJECT ONLY.\n- DO NOT wrap in markdown code blocks if possible, or use standard JSON.\n- ABSOLUTELY NO introductory text, greetings, or explanations.\n- Tags must be in lower-case, kebab-case (e.g., \"game-development\", \"indie-dev\"), in Vietnamese or English based on common tech terminology.\n\n### EXPECTED OUTPUT FORMAT:\n{\n  \"description\": \"Câu mô tả ngắn gọn nội dung cốt lõi của cuốn sách bằng tiếng Việt tại đây.\",\n  \"tags\": [\"tag-1\", \"tag-2\", \"tag-3\", \"tag-4\", \"tag-5\"]\n}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        128,
+        -16
+      ],
+      "id": "94ff5c7b-665c-490e-820a-e3eb92246eef",
+      "name": "LLM Metadata"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an elite Knowledge Extraction Engine. Extract high-density knowledge from the text excerpt below (Part {{ $json.chunkIndex }}/{{ $json.totalChunks }} of the book).\n\n<text_chunk>\n{{ $json.content }}\n</text_chunk>\n\n### CRITICAL RULE - ZERO CHATTER & NO FIXED TEMPLATES (STRICT):\n- Output ONLY the extracted knowledge body.\n- ABSOLUTELY NO introductory or concluding lines (NO \"Dưới đây là...\", \"Tóm tắt phần...\").\n- DO NOT use rigid template headers (ABSOLUTELY FORBIDDEN to write boilerplate headings like \"Khái niệm & Nguyên tắc\", \"Khung xử lý & Quy trình\", \"WHY\", \"HOW\").\n- Start IMMEDIATELY with the content.\n\n### KNOWLEDGE EXTRACTION & DYNAMIC STRUCTURE:\n- High Information Density: Retain 100% of facts, metrics, rules, steps, concrete advice, tools, and pitfalls. Cut all filler prose and transitional fluff.\n- Organic Subheadings: Use custom, natural Markdown headers (`### [Name of the specific topic]`) ONLY when needed to group distinct subjects within this chunk. Name them based on the actual topic discussed in the text.\n- Formatting: Use concise bullet points, bold key terms (`**bold**`), and construct Markdown Tables (`| Header | Header |`) whenever encountering comparisons, steps, or structured data.\n\n### LANGUAGE CONSTRAINT:\n- Write the ENTIRE extraction in VIETNAMESE (retain technical English terms in parentheses if necessary).",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        128,
+        352
+      ],
+      "id": "114380b2-cac9-4fc0-850f-9a6100f7e6da",
+      "name": "Knowledge Extraction"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Read/Write Files from Disk": {
+      "main": [
+        [
+          {
+            "node": "Read PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Read/Write Files from Disk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract TOC": {
+      "main": [
+        [
+          {
+            "node": "LLM Metadata",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read PDF": {
+      "main": [
+        [
+          {
+            "node": "Extract TOC",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Knowledge Extraction",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Calculate Tokens",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Knowledge Extraction",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File": {
+      "main": [
+        [
+          {
+            "node": "Read/Write Files from Disk1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate Tokens": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Manual Header": {
+      "main": [
+        [
+          {
+            "node": "Convert to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "LLM Metadata",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Manual Header",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LLM Metadata": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Knowledge Extraction": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "9d76c069-f2be-4551-baf4-597f4494af4c",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "545284d5f198aeefd26ba2ab75af1fc91c409054b5d1e25b88af6a98c8e1918a"
+  },
+  "nodeGroups": [],
+  "id": "c8a6Sos04Ei4N1J2",
+  "tags": []
+}
