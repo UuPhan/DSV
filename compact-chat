@@ -1,104 +1,52 @@
-[CONTEXT — DSV / USER / WORKING PRINCIPLES]
+# CONTEXT HANDOFF — DSV + n8n BUDDHIST CHANNEL
 
-USER:
-- Vietnamese-speaking.
-- Wants concise, factual, precise answers; correctness > confidence.
-- Prefer Markdown tables when useful.
-- Do not guess/hallucinate. If unknown: “Tôi không biết”.
-- Distinguish verified facts vs analysis/assumptions.
-- Ask clarification if information is insufficient.
-- For current/verifiable information, use web search.
-- User dislikes overengineering/productivity frameworks.
-- Preferred workflow: one task at a time → finish DoD → next task. No scope expansion. When tired, stop/rest/sleep.
-- User can enter deep work for hours when coding/testing/researching; do not interrupt deep work with portfolio/marketing tasks.
-- User is aware LLM output can be wrong. Treat AI plans as hypotheses; implementation/playtest/evidence are the authority.
+## 1. DSV — Dark Starve Valley
 
-==================================================
-DSV — DARK STARVE VALLEY
-==================================================
+DSV là game 3D dark-fantasy farming RPG làm bằng Unreal Engine, C++ first.
 
-GENRE:
-Stylized 3D Dark Fantasy Farming RPG, Unreal Engine, PC.
+Core:
 
-CORE:
-Farming · Alchemy · Relationships · Choice · Consequence · Combat
-Future: asymmetric co-op / NPC Possession.
+* Farming
+* Alchemy
+* Relationships
+* Choice / Consequence
+* Combat
+* Future: asymmetric co-op / NPC Possession
 
-HIGH CONCEPT:
-- Player is infected with the same disease as NPCs.
-- Serum is scarce.
-- Prototype dilemma:
-  6 seeds → 6 crops → max 2 serum → 3 candidates (Player + NPC A + NPC B) → only 2 saved.
-- Unsaved character becomes Boss.
-- Choice has relationship + gameplay + narrative consequences.
+High concept:
 
-GAMEPLAY LOOP:
+* Player nhiễm cùng căn bệnh với NPC.
+* Serum khan hiếm.
+* Prototype: 6 seeds → 6 crops → craft tối đa 2 serum → 3 candidates (Player + NPC A + NPC B) → chỉ cứu được 2 → người không được cứu trở thành Boss.
+
+Gameplay loop:
 Explore → Gather → Farm → Alchemy → Interact → Choose → Relationship → Consequence → Combat/Romance/Story → Ending.
 
-PROTOTYPE:
-Single-player proof of gameplay loop.
-Architecture should support future:
-Character, NPC State, Quest, Relationship, Combat, Boss, Dialogue, World State, Player Choice, Possession.
+M4 prototype DoD:
 
-FUTURE CHARACTER MODEL:
-Character = Identity + State + Role + Abilities + Relationships + Agency
+* Infection
+* Meet 2 NPCs
+* Disease progression
+* Plant 6 seeds
+* Craft 2 serum
+* Choose 2 of 3
+* Relationship/consequence
+* Unsaved candidate → Boss
+* Combat
+* Ending
+* Checkpoint/reload
+* Alternate route chỉ qua New Game
 
-Important:
-- Character is fundamentally one architecture.
-- Player/NPC/Boss are not necessarily separate character classes.
-- Boss = state/form/transformation of the same Character.
-- Possession = change of controller/agency, not conversion into PlayerCharacter.
-- Character can be controlled by AI or Player depending on agency/controller.
-- Current CharacterMaster is player-first; NPC implementation comes later.
+M4 Gate:
 
-Example:
-CharacterMaster
- └─ Identity / ID
-     ├─ Logic
-     ├─ State
-     ├─ Behavior
-     ├─ Animation
-     ├─ Character-specific Input
-     └─ Character-specific handling
+* Player hiểu mình bị nhiễm
+* Hiểu chỉ có 2 serum
+* Hiểu có 3 candidates
+* Cảm thấy lựa chọn gây discomfort/regret
+* Muốn xem alternative outcome
+  Nếu M4 fail → stop expansion, fix core.
 
-==================================================
-M4 / PROTOTYPE DEFINITION OF DONE
-==================================================
-
-1. Player becomes infected.
-2. Meets 2 infected NPCs.
-3. Disease progresses.
-4. Plants 6 seeds.
-5. Crafts 2 serum.
-6. Chooses 2 of 3 characters.
-7. Relationship/consequence occurs.
-8. Unsaved character becomes Boss.
-9. Combat.
-10. Ending.
-11. Checkpoint/reload.
-12. Alternate route only through New Game.
-
-M4 GATE:
-Player must understand:
-- infected state
-- 2 serum
-- 3 candidates
-- meaningful discomfort/regret
-- desire to see alternative outcome
-
-If M4 fails, stop expansion and fix core.
-
-SAVE:
-- No manual save.
-- No multiple slots.
-- No branch saves.
-- Only latest checkpoint.
-- Alternate branch requires New Game.
-
-==================================================
-CURRENT ROADMAP
-==================================================
-
+Roadmap:
 P0 Foundation
 P1 Character Architecture
 P2 World Blockout
@@ -118,492 +66,479 @@ P13 Audio
 P14 QA
 
 Rules:
-- WIP = 1
-- Dependency first
-- Relative SP
-- No fixed deadline
-- Do not expand scope unless required by current task/DoD.
 
-==================================================
-CURRENT INVENTORY / UI SCOPE
-==================================================
+* WIP = 1
+* Dependency first
+* Relative SP
+* No fixed deadline
+* No scope expansion unless required by current task/DoD
+* Workflow: Task → DoD → implement → test → done → next
+* Không interrupt deep work bằng portfolio/marketing/documentation.
+* Không build generic systems trước khi prototype chứng minh cần.
 
-Do NOT build a general inventory system for M4.
+Current farming architecture:
 
-Inventory only needs:
-1. Planting → open inventory → select seed → confirm/cancel.
-2. Alchemy/serum → open inventory → select required item → confirm/cancel.
-3. NPC interaction → open relevant dialogue/character UI.
+* Character: input/action
+* MainController: player-facing orchestration + UI routing
+* FarmPlot: farming state/lifecycle
+* Plant Actor: growth lifecycle
+* PlayerState: inventory/item ownership
+* UI: presentation/selection/result
+* Plant Actor callback FarmPlot; FarmPlot quyết định harvest.
+* Không build general inventory system cho M4.
 
-No need now:
-- Move
-- Store
-- Drop
-- Sort
-- Weight
-- Capacity
-- Stack management
-- General-purpose item action framework
+Controller architecture:
 
-If item is seed but player is not at FarmPlot:
-→ reject/disable Plant action.
+* MainController là central orchestrator.
+* Controller có thể callback objects và objects callback controller.
+* Character không cần artificial intermediary.
+* Controller nên orchestrate/route, không accumulate domain logic.
+* Không refactor chỉ để giảm số API.
+* Có thể tiến tới:
+  BeginInteraction(FInteractionContext)
+  → Controller
+  → UI
+  → CompleteInteraction(FInteractionResult)
+  → source
+* EItemType = item là gì.
+* InteractionType/context = player đang làm gì với item đó trong context này.
+* TMap có thể dùng cho routing nhẹ; không build giant lambda map/generic InteractionComponent quá sớm.
 
-==================================================
-CURRENT FARMING FLOW
-==================================================
+Technical principles:
 
-Character input
-↓
-FarmPlot response state
-↓
-MainController
-↓
-Inventory UI
-↓
-Player selects seed
-↓
-UMG Item interface
-↓
-MainController
-↓
-EItemType routing/callback
-↓
-FarmPlot
-↓
-Plant Actor
-↓
-Growth complete
-↓
-FarmPlot
-↓
-Harvest
+* C++ first; Blueprint secondary (cosmetics/UI/presentation/implementation).
+* Orthogonal state dimensions.
+* Relevant system owns state authority.
+* Explicit SaveGame structs/snapshots.
+* Debug bằng FAutoConsoleCommand/debug subsystem.
+* Compile != package != runtime.
+* Event-based telemetry.
+* Analytics/Steam integration để sau.
+* Không build system trước khi prototype chứng minh cần.
 
-Ownership:
-- Character: input/action
-- MainController: player-facing orchestration + UI routing
-- FarmPlot: farming state/lifecycle
-- Plant Actor: growth lifecycle
-- PlayerState: inventory/item ownership
-- UI: presentation + selection/result
+---
 
-Plant Actor should callback FarmPlot, NOT Controller.
-FarmPlot decides whether harvest is available.
+## 2. Buddhist YouTube Channel
 
-==================================================
-CONTROLLER / UI ARCHITECTURE
-==================================================
+Mục tiêu:
 
-Current architecture intentionally uses MainController as central orchestrator.
+* Kênh Phật giáo là side project/automation project.
+* Không cần income ngay.
+* Target lâu dài khoảng $150–300/month là đủ để giảm financial pressure cho DSV.
+* Có thể trở thành nền tảng cho Buddhist project lớn hơn nếu DSV thành công.
+* Mỗi video AI-assisted nhưng phải distinct và liên quan real-world content, không phải generic AI fantasy.
+* Target khoảng 1 video/day.
+* n8n automation là hoạt động thư giãn.
 
-Objects can callback Controller.
-Controller can callback Objects.
-Controller can directly access UI and PlayerState.
-Character does NOT need to be an artificial intermediary.
+Content concept:
 
-Therefore:
-Object → MainController is NOT inherently wrong.
+* Dhammapada / Kinh Pháp Cú.
+* Mỗi verse → một bài hát / music background.
+* Tối thiểu 2 phiên bản:
 
-Main concern:
-Controller should orchestrate/route, not accumulate all domain gameplay logic.
+  1. vocal/lyrics
+  2. instrumental
+* Hai phiên bản cần cùng musical identity/melody nếu có thể.
+* Không copy modern copyrighted translations.
+* Có thể dùng public-domain/licensed source và viết original lyrics.
 
-Current methods include patterns like:
-OpenInventory()
-OpenChest()
-OpenDialogue()
-OpenAlchemy()
-OpenCrafting()
-OpenFarmUI()
-OpenCharacterUI()
-OpenInventoryForPlanting()
-OpenInventoryForAlchemy()
+Proposed stack:
+n8n → orchestration
+PostgreSQL → production state
+LLM → interpretation/lyrics/image prompt
+Suno → music
+ComfyUI local → visual generation
+Krea/MiniMax → fallback nếu cần
+FFmpeg → render
+Whisper/forced alignment → lyrics timing nếu cần
+Local/object storage → assets
+YouTube API → publishing
+Telegram → human approval/control
 
-This is a real API proliferation concern, BUT:
-Different semantics naturally have different destinations:
-- Seed → FarmPlot::Plant
-- Weapon → Character::Equip
-- Food → Character::Consume
-- Material → Crafting
-- Quest item → Quest/Dialogue
+Important licensing notes:
 
-Do NOT refactor just to make method count smaller.
+* Suno paid plan: commercial-use rights theo current terms nhưng không đảm bảo copyright protection; giữ records.
+* Krea 2 Community License (June 22, 2026): commercial use nếu company revenue < $1M trailing 12 months; >= $1M cần enterprise.
+* MiniMax H3 launched July 31, 2026; nếu dùng commercial cần verify current license.
+* YouTube monetization có risk với mass-produced/repetitive/generic AI content. Distinct interpretation/music/visual narrative giảm risk nhưng không guarantee.
 
-Potential future abstraction:
-BeginInteraction(FInteractionContext)
-→ Controller
-→ UI
-→ CompleteInteraction(FInteractionResult)
-→ original interaction source
+---
 
-Example:
-FarmPlot:
-Source = FarmPlot
-Interaction = Plant
-Filter = Seed
+## 3. n8n Architecture
 
-Chest:
-Source = Chest
-Interaction = Transfer
+Long-term workflows:
 
-Crafting:
-Source = CraftingTable
-Interaction = Craft
-Filter = Material
+1. ContentPlanner
+   verse → creative spec → NEW → PLANNED
 
-Important:
-EItemType answers “what is this item?”
-InteractionType/context answers “what is the player doing with this item here?”
+2. TextGeneration
+   interpretation + original lyrics + metadata
 
-A TMap can be used as lightweight ROUTING/dispatch if repetition justifies it.
-Do NOT put all gameplay logic into giant TMap/TFunction lambdas.
-Do NOT build a generic InteractionComponent/framework prematurely.
+3. MusicGeneration
+   async Suno job → poll/retry
 
-==================================================
-CURRENT C++ SOURCE ARCHITECTURE
-==================================================
+4. VisualGeneration
+   ComfyUI primary → Krea/MiniMax fallback
 
-Source/
-├── DARKSTARVE.Target.cs
-├── DARKSTARVEEditor.Target.cs
-└── DARKSTARVE/
-    ├── DARKSTARVE.Build.cs
-    ├── DARKSTARVE.cpp/.h
-    ├── Characters/
-    │   ├── ECharacterState.h
-    │   ├── ELocomotion.h
-    │   ├── EWeaponMode.h
-    │   ├── PlayerCharacterMaster.cpp/.h
-    │   ├── Components/
-    │   │   ├── AttributeComponent.cpp/.h
-    │   │   ├── CombatComponent.cpp/.h
-    │   │   ├── SkinsHandleComponent.cpp/.h
-    │   │   └── StateMotionComponent.cpp/.h
-    │   └── Interfaces/
-    │       ├── ActionInterface.h
-    │       ├── InputKeyInterface.h
-    │       └── MotionInterface.h
-    ├── Clothing/
-    │   ├── EBodySlot.h
-    │   ├── FClothing.h
-    │   └── FSkinAsset.h
-    ├── Data/
-    │   ├── GameConfigData.h
-    │   ├── ObjectBaseData.h
-    │   ├── ObjectContainerData.h
-    │   ├── ObjectInteractData.h
-    │   └── ObjectPlantData.h
-    ├── Objects/
-    │   ├── ContainerComponent.cpp/.h
-    │   ├── EItemType.h
-    │   ├── EObjectState.h
-    │   ├── FContainer.h
-    │   ├── ObjectBase.cpp/.h
-    │   ├── Instances/
-    │   │   ├── ObjectFarmPlot.cpp/.h
-    │   │   ├── ObjectFurniture.cpp/.h
-    │   │   ├── ObjectInteract.cpp/.h
-    │   │   ├── ObjectPickup.cpp/.h
-    │   │   └── ObjectPlant.cpp/.h
-    │   └── Interfaces/
-    │       ├── ContainerInterface.h
-    │       ├── ObjectAttributeInterface.h
-    │       └── ObjectUIInterface.h
-    ├── Players/
-    │   ├── AvatarSave.h
-    │   └── MainPlayerState.cpp/.h
-    └── Systems/
-        ├── DebugCommandManager.cpp/.h
-        ├── EHUDMode.h
-        ├── GameInstanceSteam.cpp/.h
-        ├── GameStateMain.cpp/.h
-        ├── MainController.cpp/.h
-        ├── MainGameMode.cpp/.h
-        └── Interface/
-            └── UMGInterface.h
+5. VideoRenderer
+   FFmpeg audio + visual + lyrics
 
-DSV is now C++-first.
-Blueprint is secondary: cosmetics/UI/in-game presentation/implementation only.
+6. QA
 
-Portfolio positioning:
-C++ Gameplay Programming
-Unreal Engine Engineering
-Technical Design
-Systems Architecture
-Character/State
-Save/Load
-AI/NPC
-Relationship
-Choice/Consequence
-Combat
-Tools/debugging
+7. Publisher
 
-Do NOT frame DSV primarily as Blueprint work.
+Orchestrator nằm trên các workflow.
 
-==================================================
-SOURCE ARCHITECTURE AUDIT
-==================================================
+Suggested PostgreSQL tables:
 
-A Python source architecture report exists:
-DSV_Source_Architecture_Report.json
-GitHub raw:
-https://raw.githubusercontent.com/UuPhan/DSV/refs/heads/main/DSV_Source_Architecture_Report.json
+* verses
+* productions
+* generation_costs
 
-Report:
-- 19 .cpp
-- 42 .h
-- 61 source files
+Statuses:
+NEW
+PLANNED
+TEXT_READY
+MUSIC_PENDING
+MUSIC_READY
+VISUAL_PENDING
+VISUAL_READY
+RENDERING
+VIDEO_READY
+QA_PENDING
+QA_FAILED
+READY_FOR_REVIEW
+APPROVED
+UPLOADED
+SCHEDULED
+PUBLISHED
+FAILED
 
-Key architecture:
-- AttributeComponent : UActorComponent
-- CombatComponent : UActorComponent
-- SkinsHandleComponent : UActorComponent
-- StateMotionComponent : UActorComponent + IMotionInterface
-- PlayerCharacterMaster : ACharacter + IInputKeyInterface + IActionInterface
-- Data uses UPrimaryDataAsset hierarchy:
-  GameConfigData
-  ObjectBaseData
-  ObjectInteractData
-  ObjectContainerData
-  ObjectPlantData
-- Object hierarchy:
-  ObjectBase
-  → ObjectInteract
-  → Pickup / Plant / FarmPlot / Furniture
-- MainPlayerState owns inventory/container-related state.
-- MainController orchestrates UI/player interaction.
-- GameInstanceSteam, GameStateMain, MainGameMode, DebugCommandManager under Systems.
+Async principle:
 
-Audit assessment:
-- Folder structure: ~7/10
-- Component architecture: ~8/10
-- Data separation: ~8/10
-- Interfaces: ~7.5/10
-- Object hierarchy: ~7/10
-- Systems: ~6/10
-- Dependency direction: ~6/10
-- Scalability: unknown
+* create job
+* save job_id
+* stop
+* scheduled poller checks pending jobs
+* không giữ execution mở hàng giờ nếu không cần.
 
-Main concerns:
-- MainController integration hub
-- Some Object → MainController dependencies
-- PlayerCharacterMaster is player-specific
-- MainPlayerState may become God State
-- Systems folder is broad
-- Include hygiene / dependency direction
+Long-term production folder:
+
+dhammapada/
+data/
+productions/
+0001/
+source/
+text/
+music/
+visual/
+render/
+final/
+comfyui/
+scripts/
+render_video.py
+audio_align.py
+validate.py
+n8n/
+
+MVP sequence:
+MVP-1: local n8n + LLM + ComfyUI + FFmpeg + local DB → Execute → final.mp4
+MVP-2: YouTube private upload
+MVP-3: Telegram approval/retry/scheduler
+Sau đó scale.
+
+---
+
+## 4. Current ComfyUI
+
+ComfyUI chạy trên Windows host, n8n chạy Docker.
+
+User KHÔNG muốn n8n tự start/stop ComfyUI.
+User sẽ manually start ComfyUI để tùy chỉnh launch parameters.
+
+Current ComfyUI:
+
+* version 0.33.1
+* Python 3.12.3
+* PyTorch 2.13.0+cu130
+* GPU: NVIDIA RTX 5060 8GB
+* ~7.36GB VRAM free lúc kiểm tra.
+
+Current launch args:
+main.py
+--listen 0.0.0.0
+--port 8188
+--extra-model-paths-config models/extra_model_paths.yaml
+--enable-triton-backend
+--disable-api-nodes
+--cache-classic
+--use-ck-attention
+--lowvram
+
+User confirmed Krea-2 workflow chạy trực tiếp trong ComfyUI hiện tại, nên KHÔNG cần lo custom-node compatibility.
+
+Critical Docker networking:
+n8n trong Docker → ComfyUI trên Windows host:
+USE:
+http://host.docker.internal:8188
+NOT:
+http://localhost:8188
+
+---
+
+## 5. Current ComfyUI API workflow
+
+User supplied API Format JSON, not UI graph JSON.
+
+Important nodes:
+
+Node 59 = prompt:
+{
+"59": {
+"inputs": {
+"value": "Example prompt"
+},
+"class_type": "PrimitiveStringMultiline"
+}
+}
+
+Node 150:
+StringFormat:
+f_string = "{a}\n\n{b}"
+values.a = ["153", 2]
+values.b = ["59", 0]
+
+Node 153:
+Lora Loader (LoraManager)
+
+Node 292:
+PixaromaLoraLoader
+
+Node 30:135:
+ClownsharKSampler_Beta
+seed currently 813009030223241
+
+Node 30:53:
+ClownsharKSampler_Beta
+same seed
+
+Node 29:
+SaveImage
+filename_prefix = "Krea2/202609/06093113"
+images = ["30:295", 0]
+
+Node 288:
+PixaromaResolution
+custom ratio 4:3
+w 1536
+h 1152
+
+Node 30:283:
+UNETLoader
+krea/NVFP4_krea2TurboOfficialComfy.safetensors
+
+Node 30:293:
+CLIPLoader
+qwen/qwen3-vl-4b-heretic_int8_dynamic_convrot.safetensors
+type=krea2
+
+Node 30:12:
+VAELoader
+wan/Wan2.1_VAE_upscale2x_imageonly_real_v1_fp8.safetensors
+
+Node 30:250:
+UpscaleModelLoader
+realesrganX4plus_v50.safetensors
+
+Node 30:297:
+LoraLoaderModelOnly
+krea2/Krea2_TextFusion_Refusal_Reduction.safetensors
+
+ComfyUI API execution:
+POST /prompt
+→ returns prompt_id
+→ poll GET /history/{prompt_id}
+→ extract image filename/subfolder/type
+→ GET /view?filename=...&subfolder=...&type=output
+→ binary image.
 
 IMPORTANT:
-Do NOT refactor folder structure just for aesthetics.
-Refactor when real maintenance/scaling pain appears.
+Do NOT send the old UI workflow JSON directly to /prompt.
+The API Format JSON above IS suitable for /prompt.
 
-Known legacy:
-ActionInterface.h → FContainer.h is leftover from old Blueprint→C++ refactor.
-Old architecture had Object → Character → Controller.
-FContainer dependency is now unused legacy.
-Clean opportunistically; NOT a priority.
+For n8n, keep this workflow as an object and only mutate:
+workflow["59"].inputs.value = generated image_prompt
 
-==================================================
-TECHNICAL PRINCIPLES
-==================================================
+Optionally set same random seed on:
+workflow["30:135"].inputs.seed
+workflow["30:53"].inputs.seed
 
-- Avoid giant enums for all character states.
-- Prefer orthogonal state dimensions.
-- State authority belongs to the relevant system.
-- SaveGame should use explicit structs/snapshots.
-- Debug commands via FAutoConsoleCommand / debug subsystem.
-- Compile success != package success != runtime success.
-- Telemetry should be event-based.
-- Unreal analytics layer + consent gate + GameAnalytics can be useful later.
-- Steam is not a general telemetry backend.
-- Do not build systems before the prototype proves they are needed.
+And set unique:
+workflow["29"].inputs.filename_prefix
 
-Core architecture rule:
-“Architecture should support the future, but implementation should solve the current problem.”
+---
 
-==================================================
-PRODUCTION / WORKFLOW
-==================================================
+## 6. Current MVP requested
 
-User wants:
-Task → DoD → implement → test → done → next task.
+User wants to test exactly:
 
-Do NOT interrupt a coding/deep-work session to:
-- make portfolio post
-- make marketing content
-- create reusable asset
-- document excessively
-- brainstorm unrelated features
+Input = 1 Dhammapada verse
+→ generate lyrics
+→ generate image prompt
+→ send image prompt to ComfyUI
+→ get generated image
+→ notify user with lyrics + image
+→ later add approval
 
-Instead:
-- Finish production task.
-- Later, capture evidence/knowledge/reuse as by-products.
-- Marketing should be derived from actual production evidence.
+Minimal MVP should NOT use PostgreSQL yet.
 
-Research rule:
-Research only to answer a concrete current question.
-Unrelated ideas → LATER, not current scope.
+Flow:
 
-Deep work:
-- Sustained concentration on one hard problem.
-- Forgetting time while coding/testing/researching can be deep work.
-- Deep work ≠ exhaustion.
-- Use Definition of Done as stop condition.
-- When tired, stop and recharge.
+Manual Trigger
+↓
+Input Verse
+↓
+LLM
+→ title
+→ lyrics
+→ image_prompt
+↓
+Build ComfyUI API payload
+↓
+POST http://host.docker.internal:8188/prompt
+↓
+Wait ~3 sec
+↓
+GET /history/{prompt_id}
+↓
+IF done?
+no → Wait → poll again
+yes → /view
+↓
+Telegram:
+Send lyrics
+Send image
 
-==================================================
-LLM / AI WORKING MODEL
-==================================================
+LLM output schema:
+{
+"title": "...",
+"lyrics": "...",
+"image_prompt": "...",
+"verse": "..."
+}
 
-Do not treat assistant output as authority.
+For first test:
 
-Use:
-Roadmap = hypothesis
-Code = implementation
-Playtest/tests = evidence
-Market/user feedback = external evidence
+* no PostgreSQL
+* no scheduler
+* no state machine
+* no Suno
+* no YouTube
+* prove end-to-end path first.
 
-Common LLM failure modes:
-- misunderstanding requirements
-- technical factual errors
-- confident but incorrect architecture
-- over-abstraction
-- scope expansion
-- hidden assumptions
+---
 
-Useful fact-check questions:
-1. “Bạn đang assume gì?”
-2. “Cái này có thực sự cần cho scope hiện tại không?”
-3. “Nếu không làm cách này thì vấn đề gì xảy ra?”
-4. “Làm sao kiểm chứng claim này?”
+## 7. Telegram setup
 
-Red flags:
-- “best practice” without mechanism
-- abstraction before pain exists
-- solution larger than problem
-- jargon without concrete behavior
-- no trade-offs
-- architecture aesthetics replacing real requirements
+Recommended notification/approval channel for this system: Telegram.
 
-==================================================
-PORTFOLIO / OLD PROJECTS
-==================================================
+Setup:
 
-Jelly Quest:
-- itch: https://vuphan.itch.io/jelly-quest
-- Epic MegaJam 2022
-- 508 entries
-- Unreal Engine 5.0.3
-- Windows
-- Submitted ~2 days 3 hours before deadline
-- Gameplay: 3 jellyfish characters answer riddles by collecting letter bubbles.
-- User made it with Unreal/Maya/Photoshop/Substance.
-- Correct framing: shipped jam prototype with clear identity and technical/gameplay evidence.
-- It was NOT a finalist/winner and NOT in Epic sizzle reel.
-- Epic editorial inclusion/SideFX collection are real but limited signals, NOT proof of production quality.
+1. Open @BotFather
+2. /newbot
+3. Create bot
+4. Get bot token
+5. Open the created bot and send /start
+6. Obtain chat_id via Telegram Bot API getUpdates
+7. Store token/chat ID as environment variables, not hardcoded.
 
-Running Water Fill Out Of Space:
-- itch: https://vuphan.itch.io/running-water-fill-out-of-space
-- YouTube: https://youtu.be/HM9SZfJ7zns
-- Epic MegaJam 2021
-- 473 entries
-- Submitted ~1 day 16 hours before deadline
-- Uses Unreal/Maya/Photoshop/Substance/Houdini/SpeedTree
-- Stronger portfolio evidence for Environment / Procedural / Unreal / Technical Art.
-- Included in SideFX “Epic MegaJam 2021 Made-With-Houdini Games” collection.
-- Again: collection inclusion ≠ quality certification.
+n8n Docker environment:
+OPENAI_API_KEY=...
+TELEGRAM_BOT_TOKEN=...
+TELEGRAM_CHAT_ID=...
 
-Combined evidence:
-- 2 published Unreal projects
-- 2 Epic MegaJam submissions
-- shipped under time constraints
-- gameplay + 3D
-- Unreal + Maya + Substance + Houdini
-- Blueprint/C++ evolution
-- AI/animation/UI/environment/interaction
-- actual Windows builds
+Telegram MVP:
 
-Missing production evidence:
-- production pipeline
-- maintainability at larger scale
-- optimization
-- systematic playtesting/iteration
-- production-quality polish
+* Send lyrics as text message
+* Send image as photo
+* Avoid putting long lyrics in photo caption because Telegram caption limits are less convenient.
 
-DSV should become the main portfolio asset.
+Later:
+[APPROVE]
+[REJECT]
+[REGENERATE]
 
-==================================================
-CAREER / MONEY STRATEGY
-==================================================
+n8n supports human-in-the-loop / Send and Wait for Approval patterns.
 
-DSV is:
-- long-term upside
-- portfolio asset
-- potential commercial product
-- NOT guaranteed income
+---
 
-If runway is sufficient and DSV cash cost is near zero:
-→ prioritize finishing DSV rather than splitting attention into unrelated products/contracts.
+## 8. Alternatives to Telegram for approval
 
-But:
-- do not assume DSV succeeds
-- use M4 / vertical slice / playtest / wishlist / launch evidence
-- have kill-switch criteria if core loop fails despite reasonable iteration/exposure
+Possible channels:
 
-If immediate income is needed:
-- productized UE5/C++/Houdini systems/assets can be secondary.
-- Prefer fixed-scope, milestone-based, async work if contracting.
-- Avoid multiple clients/context switching/daily standups/on-call/9–5 availability if incompatible with DSV capacity.
+* Telegram — best overall for this use case
+* Discord — good for media-heavy content review
+* Slack — good for team/workspace workflows
+* Gmail/email — good for formal approval by email
+* n8n Chat — possible
+* Custom web dashboard — powerful but currently overkill
 
-Do not hire before revenue.
+Architectural principle:
+Approval should be a production stage, not tightly coupled to Telegram.
 
-==================================================
-PLAYER TESTING
-==================================================
+Long-term:
+n8n → REVIEW
+├→ Telegram
+├→ Discord
+├→ Gmail
+└→ Web UI
 
-First M4 playtest:
-15–30 minutes.
-Start ~5 people → 10 → 20 → 50 if useful.
+Production state:
+GENERATED
+→ WAITING_APPROVAL
+→ APPROVED / REJECTED
+→ next generation/render/publish stage
 
-Tester groups:
-- cold testers
-- target players
-- technical testers
+But for current MVP, simply:
+Verse → lyrics → image → Telegram
 
-Ask:
-- What is happening?
-- What do you think you need to do?
-- Which NPC do you care about?
-- How do you feel at the 2/3 choice?
-- Do you want to see another outcome?
+After end-to-end works, add approval.
 
-Avoid:
-“Do you like the game?”
+---
 
-==================================================
-CURRENT STRATEGIC PRINCIPLE
-==================================================
+## 9. User preferences / working style
 
-The immediate objective is NOT:
-- perfect architecture
-- generic systems
-- complete inventory framework
-- multiplayer
-- marketing machine
-- portfolio optimization
+* User values correctness over confidence.
+* Do not guess; explicitly say when uncertain.
+* Keep scope controlled.
+* One task at a time.
+* Task → DoD → implement → test → done → next.
+* User does not want portfolio/career optimization to interrupt actual development.
+* User can deep-work for long periods; don't interrupt with unrelated tasks.
+* Avoid overengineering.
+* Build the smallest thing that proves the hypothesis first.
+* Marketing/content automation should derive from actual production evidence.
+* DSV is long-term upside, not guaranteed income.
+* If immediate income is not needed and DSV cost is low, prioritize DSV.
+* If income becomes necessary, prefer fixed-scope asynchronous UE5/C++/Houdini work rather than context-switch-heavy employment/clients.
+* Do not hire before revenue.
 
-Immediate objective:
-BUILD THE SMALLEST DSV PROTOTYPE THAT PROVES THE CORE CHOICE/CONSEQUENCE LOOP.
+## 10. Immediate next step
 
-When discussing architecture:
-1. Check current M4 requirement.
-2. Check whether the problem is real/repeated.
-3. Prefer smallest solution.
-4. Preserve future extensibility only where cheap.
-5. Do not refactor merely because another architecture looks cleaner.
+The most useful next action is:
 
-==================================================
-CONVERSATION CONTINUITY
-==================================================
+Create a complete **n8n importable workflow JSON** for the MVP:
 
-If context is ambiguous:
-- Ask instead of guessing.
-- Do not invent details about DSV.
-- Treat the above as canonical unless the user explicitly updates it.
+Manual Trigger
+→ Input Verse
+→ LLM structured output
+→ Build ComfyUI payload using the user's exact API workflow
+→ POST /prompt
+→ poll /history
+→ download image /view
+→ Telegram Send Message (lyrics)
+→ Telegram Send Photo (binary)
+
+Use environment variables for credentials.
+
+Do NOT add PostgreSQL/Suno/YouTube/approval yet unless explicitly requested.
