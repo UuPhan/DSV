@@ -1,60 +1,103 @@
 {
-  "name": "AI Agent → Krea2 ComfyUI → Telegram",
+  "name": "Dhammapada → AI → Krea2 ComfyUI → Local Data → Telegram",
   "nodes": [
     {
       "parameters": {},
-      "id": "c9a7244b-1af9-4434-8e96-ed5eead5dbd3",
+      "id": "20503fa8-04a1-492e-b42f-20776deadaaf",
       "name": "Manual Trigger",
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
       "position": [
-        -5360,
-        48
+        -7344,
+        80
       ]
     },
     {
       "parameters": {
-        "jsCode": "return [{\n  json: {\n    verse: `Mind precedes all knowables,\nmind's their chief, mind-made are they.\nIf with a corrupted mind\none should either speak or act\ndukkha follows caused by that,\nas does the wheel the ox's hoof.`,\n    language: \"English\"\n  }\n}];"
+        "jsCode": "const now = new Date();\nconst pad = n => String(n).padStart(2, '0');\n\nconst runId = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}-${Math.random().toString(36).slice(2, 8)}`;\n\nreturn [{\n  json: {\n    run_id: runId,\n    verse: `Mind precedes all knowables,\nmind's their chief, mind-made are they.\nIf with a corrupted mind\none should either speak or act\ndukkha follows caused by that,\nas does the wheel the ox's hoof.`,\n    language: \"English\"\n  }\n}];"
       },
-      "id": "397ae748-36e5-4fcf-b0ff-51335ae60c0d",
+      "id": "acbee968-5d60-4329-9e4b-c759f11503bb",
       "name": "Input Verse",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -5136,
-        48
+        -7104,
+        80
       ]
     },
     {
       "parameters": {
-        "jsCode": "const raw = $json.output;\n\nif (!raw) {\n  throw new Error('AI Agent returned no output.');\n}\n\nlet result;\n\nif (typeof raw === 'object') {\n  result = raw;\n} else {\n  const text = String(raw).trim();\n\n  try {\n    result = JSON.parse(text);\n  } catch (firstError) {\n    const cleaned = text\n      .replace(/^```json\\s*/i, '')\n      .replace(/^```\\s*/i, '')\n      .replace(/\\s*```$/i, '')\n      .trim();\n\n    try {\n      result = JSON.parse(cleaned);\n    } catch (secondError) {\n      throw new Error(\n        'AI Agent did not return valid JSON. Raw output:\\n' + text\n      );\n    }\n  }\n}\n\nif (!result || typeof result !== 'object') {\n  throw new Error('AI Agent output is not an object.');\n}\n\nif (typeof result.title !== 'string' || !result.title.trim()) {\n  throw new Error('Missing or invalid title.');\n}\n\nif (typeof result.lyrics !== 'string' || !result.lyrics.trim()) {\n  throw new Error('Missing or invalid lyrics.');\n}\n\nif (typeof result.image_prompt !== 'string' || !result.image_prompt.trim()) {\n  throw new Error('Missing or invalid image_prompt.');\n}\n\nreturn [{\n  json: {\n    title: result.title.trim(),\n    lyrics: result.lyrics.trim(),\n    image_prompt: result.image_prompt.trim()\n  }\n}];"
+        "promptType": "define",
+        "text": "={{ $json.verse }}",
+        "options": {
+          "systemMessage": "You are a professional songwriter and visual prompt designer.\n\nThe user gives you a verse, concept, or idea for a song.\n\nYour job is to create:\n1. A song title.\n2. Complete original song lyrics.\n3. A detailed image-generation prompt for an album-cover / music artwork.\n\nThe requested language is provided in the user input.\n\nIMPORTANT OUTPUT RULES:\n- Return ONLY valid JSON.\n- Do NOT use Markdown.\n- Do NOT use ```json code fences.\n- Do NOT add explanations before or after the JSON.\n- Use exactly these three fields:\n  title\n  lyrics\n  image_prompt\n- Do not add any other fields.\n- Escape quotation marks and line breaks correctly so the result is valid JSON.\n\nJSON format:\n{\n  \"title\": \"Song title\",\n  \"lyrics\": \"Complete song lyrics\",\n  \"image_prompt\": \"Detailed visual prompt\"\n}\n\nLYRICS REQUIREMENTS:\n\n- Write a COMPLETE SONG, not a short poem, excerpt, summary, or single verse.\n- The lyrics should be substantial enough for approximately a 2–3 minute song.\n- Target approximately 250–400 words.\n- Use the following structure unless the source material clearly requires a different structure:\n\n[Verse 1]\n[Pre-Chorus]\n[Chorus]\n[Verse 2]\n[Chorus]\n[Bridge]\n[Final Chorus]\n[Outro]\n\n- Every section must contain actual singable lyrics.\n- [Verse 1] and [Verse 2] must be meaningfully different.\n- The [Chorus] must contain a memorable central idea connected to the source verse.\n- Repeat the chorus where indicated, but you may vary a few lines in the [Final Chorus] to create progression and resolution.\n- The [Bridge] should introduce a new perspective, emotional shift, realization, or deeper interpretation.\n- [Outro] should provide a concise but meaningful ending.\n- Do not stop after [Verse 1].\n- Do not omit [Chorus], [Verse 2], [Bridge], or [Outro] unless there is a strong artistic reason.\n- Do not use section labels such as \"(repeat)\", \"(instrumental)\", \"(softly)\", \"(spoken)\", or production instructions.\n- Make the lyrics coherent, poetic, emotionally engaging, and singable.\n- Preserve the core philosophical or narrative meaning of the user's source material.\n- Expand and interpret the source material rather than merely repeating or translating it line by line.\n- Do not introduce unrelated themes.\n- Write completely original lyrics.\n- Do not copy existing copyrighted lyrics.\n- Do not imitate a specific living songwriter or artist.\n- Match the requested language exactly.\n\nIMPORTANT:\nThe source verse may be short. Do NOT make the song short just because the source verse is short.\nUse the source verse as the conceptual foundation and develop it into a complete song while preserving its meaning.\n\nIMAGE PROMPT REQUIREMENTS:\n\n- Create a cinematic, detailed visual prompt for an album-cover / music artwork.\n- The visual concept should be inspired by the meaning and emotional atmosphere of the song.\n- Describe:\n  subject,\n  environment,\n  atmosphere,\n  lighting,\n  composition,\n  depth,\n  camera perspective,\n  visual style,\n  color and tonal mood.\n- Make the composition visually striking and suitable for high-quality music artwork.\n- Use strong visual storytelling.\n- Do NOT request text, typography, letters, logos, captions, subtitles or watermarks.\n- Do NOT include the song lyrics in image_prompt.\n- Do NOT include technical explanations about the generation workflow.\n- The prompt must be suitable for the Krea/Krea2 image workflow used by ComfyUI.\n\nFINAL VALIDATION BEFORE RESPONDING:\n\nBefore returning the JSON, verify:\n1. The output contains exactly title, lyrics, and image_prompt.\n2. lyrics is a complete song.\n3. lyrics is approximately 250–400 words.\n4. lyrics contains multiple sections.\n5. lyrics does not stop after [Verse 1].\n6. image_prompt describes only the visual concept.\n7. The entire response is valid JSON."
+        }
       },
-      "id": "9162491a-a1c8-4e4c-a59c-1ae29b57021b",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -6864,
+        80
+      ],
+      "id": "14d05354-05c0-4385-a418-0e00fa65bfc8",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gemma-4-e4b",
+          "mode": "list",
+          "cachedResultName": "gemma-4-e4b"
+        },
+        "responsesApiEnabled": false,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -6864,
+        336
+      ],
+      "id": "ea415765-3d9e-4ac0-ae10-38160f25308b",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "lgv031F2iR39TejN",
+          "name": "LM Studio"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $json.output;\n\nif (!raw) throw new Error('AI Agent returned no output.');\n\nlet result;\n\nif (typeof raw === 'object') {\n  result = raw;\n} else {\n  const text = String(raw).trim();\n  try {\n    result = JSON.parse(text);\n  } catch (e1) {\n    const cleaned = text\n      .replace(/^```json\\s*/i, '')\n      .replace(/^```\\s*/i, '')\n      .replace(/\\s*```$/i, '')\n      .trim();\n\n    try {\n      result = JSON.parse(cleaned);\n    } catch (e2) {\n      throw new Error('AI Agent did not return valid JSON. Raw output:\\n' + text);\n    }\n  }\n}\n\nif (!result || typeof result !== 'object') {\n  throw new Error('AI Agent output is not an object.');\n}\n\nif (typeof result.title !== 'string' || !result.title.trim()) {\n  throw new Error('Missing or invalid title.');\n}\n\nif (typeof result.lyrics !== 'string' || !result.lyrics.trim()) {\n  throw new Error('Missing or invalid lyrics.');\n}\n\nif (typeof result.image_prompt !== 'string' || !result.image_prompt.trim()) {\n  throw new Error('Missing or invalid image_prompt.');\n}\n\nconst source = $('Input Verse').first().json;\n\nreturn [{\n  json: {\n    run_id: source.run_id,\n    verse: source.verse,\n    language: source.language,\n    title: result.title.trim(),\n    lyrics: result.lyrics.trim(),\n    image_prompt: result.image_prompt.trim()\n  }\n}];"
+      },
+      "id": "bce48ebd-32ca-4eac-a428-8ac91120e593",
       "name": "Parse Agent JSON",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -4592,
-        48
+        -6544,
+        80
       ]
     },
     {
       "parameters": {
-        "jsCode": "const imagePrompt = $json.image_prompt;\nconst title = $json.title;\nconst lyrics = $json.lyrics;\n\nif (!imagePrompt) {\n  throw new Error('image_prompt is empty.');\n}\n\nconst prompt = {\n  \"29\": {\n    \"inputs\": {\n      \"filename_prefix\": \"Krea2/202609\",\n      \"images\": [\n        \"30:295\",\n        0\n      ]\n    },\n    \"class_type\": \"SaveImage\",\n    \"_meta\": {\n      \"title\": \"Save Image\"\n    }\n  },\n  \"59\": {\n    \"inputs\": {\n      \"value\": \"Example prompt\"\n    },\n    \"class_type\": \"PrimitiveStringMultiline\",\n    \"_meta\": {\n      \"title\": \"Prompt\"\n    }\n  },\n  \"150\": {\n    \"inputs\": {\n      \"f_string\": \"{a}\\n\\n{b}\",\n      \"values.a\": [\n        \"153\",\n        2\n      ],\n      \"values.b\": [\n        \"59\",\n        0\n      ]\n    },\n    \"class_type\": \"StringFormat\",\n    \"_meta\": {\n      \"title\": \"Format Text\"\n    }\n  },\n  \"153\": {\n    \"inputs\": {\n      \"__lm_autocomplete_meta_text\": {\n        \"version\": 1,\n        \"textWidgetName\": \"text\",\n        \"lastAccepted\": {\n          \"start\": 0,\n          \"end\": 28,\n          \"insertedText\": \"<lora:MysticXXX_KREA2_v2:1>,\",\n          \"textSnapshot\": \"<lora:MysticXXX_KREA2_v2:1>,\"\n        }\n      },\n      \"text\": \"\",\n      \"loras\": {\n        \"__value__\": []\n      },\n      \"model\": [\n        \"292\",\n        0\n      ],\n      \"clip\": [\n        \"292\",\n        1\n      ]\n    },\n    \"class_type\": \"Lora Loader (LoraManager)\",\n    \"_meta\": {\n      \"title\": \"Lora Loader (LoraManager)\"\n    }\n  },\n  \"288\": {\n    \"inputs\": {\n      \"ResolutionState\": \"{\\\"mode\\\":\\\"custom_ratio\\\",\\\"ratio\\\":\\\"4:3\\\",\\\"w\\\":1536,\\\"h\\\":1152,\\\"custom_w\\\":576,\\\"custom_h\\\":960,\\\"custom_ratio_w\\\":4,\\\"custom_ratio_h\\\":3,\\\"snap\\\":8}\"\n    },\n    \"class_type\": \"PixaromaResolution\",\n    \"_meta\": {\n      \"title\": \"Resolution Pixaroma\"\n    }\n  },\n  \"292\": {\n    \"inputs\": {\n      \"model\": [\n        \"30:283\",\n        0\n      ],\n      \"clip\": [\n        \"30:293\",\n        0\n      ],\n      \"LoraLoaderState\": \"{\\\"version\\\":1,\\\"sep\\\":\\\", \\\",\\\"cacheMode\\\":\\\"last\\\",\\\"loras\\\":[{\\\"name\\\":\\\"krea2/Krea2_TextFusion_Refusal_Reduction.safetensors\\\",\\\"on\\\":true,\\\"sm\\\":1,\\\"sc\\\":1,\\\"triggers\\\":[]},{\\\"name\\\":\\\"krea2/(Krea 2) 8-Step Turbo Distill Rank 256 V2026.1.safetensors\\\",\\\"on\\\":false,\\\"sm\\\":1,\\\"sc\\\":1,\\\"triggers\\\":[]}]}\"\n    },\n    \"class_type\": \"PixaromaLoraLoader\",\n    \"_meta\": {\n      \"title\": \"LoRA Loader Pixaroma\"\n    }\n  },\n  \"30:135\": {\n    \"inputs\": {\n      \"eta\": 0.5,\n      \"sampler_name\": \"linear/rk4_4s\",\n      \"scheduler\": \"simple\",\n      \"steps\": 8,\n      \"steps_to_run\": -1,\n      \"denoise\": 0.3,\n      \"cfg\": 1,\n      \"seed\": 0,\n      \"sampler_mode\": \"resample\",\n      \"bongmath\": false,\n      \"model\": [\n        \"30:179\",\n        0\n      ],\n      \"positive\": [\n        \"30:6\",\n        0\n      ],\n      \"negative\": [\n        \"30:13\",\n        0\n      ],\n      \"latent_image\": [\n        \"30:53\",\n        0\n      ]\n    },\n    \"class_type\": \"ClownsharKSampler_Beta\",\n    \"_meta\": {\n      \"title\": \"ClownsharKSampler\"\n    }\n  },\n  \"30:179\": {\n    \"inputs\": {\n      \"switch\": false,\n      \"on_false\": [\n        \"153\",\n        0\n      ],\n      \"on_true\": [\n        \"30:297\",\n        0\n      ]\n    },\n    \"class_type\": \"ComfySwitchNode\",\n    \"_meta\": {\n      \"title\": \"If/Else Switch\"\n    }\n  },\n  \"30:53\": {\n    \"inputs\": {\n      \"eta\": 0.5,\n      \"sampler_name\": \"linear/euler\",\n      \"scheduler\": \"beta\",\n      \"steps\": 8,\n      \"steps_to_run\": 8,\n      \"denoise\": 1,\n      \"cfg\": 1,\n      \"seed\": 0,\n      \"sampler_mode\": \"standard\",\n      \"bongmath\": false,\n      \"model\": [\n        \"153\",\n        0\n      ],\n      \"positive\": [\n        \"30:6\",\n        0\n      ],\n      \"negative\": [\n        \"30:13\",\n        0\n      ],\n      \"latent_image\": [\n        \"30:5\",\n        0\n      ]\n    },\n    \"class_type\": \"ClownsharKSampler_Beta\",\n    \"_meta\": {\n      \"title\": \"ClownsharKSampler\"\n    }\n  },\n  \"30:140\": {\n    \"inputs\": {\n      \"upscale\": 2,\n      \"tile\": false,\n      \"tile_size\": 512,\n      \"overlap\": 64,\n      \"temporal_size\": 4096,\n      \"temporal_overlap\": 64,\n      \"samples\": [\n        \"30:135\",\n        0\n      ],\n      \"vae\": [\n        \"30:12\",\n        0\n      ]\n    },\n    \"class_type\": \"VAEUtils_VAEDecodeTiled\",\n    \"_meta\": {\n      \"title\": \"VAE Decode (VAE Utils)\"\n    }\n  },\n  \"30:294\": {\n    \"inputs\": {\n      \"upscale_model\": [\n        \"30:250\",\n        0\n      ],\n      \"image\": [\n        \"30:140\",\n        0\n      ]\n    },\n    \"class_type\": \"ImageUpscaleWithModel\",\n    \"_meta\": {\n      \"title\": \"Upscale Image (using Model)\"\n    }\n  },\n  \"30:5\": {\n    \"inputs\": {\n      \"width\": [\n        \"288\",\n        0\n      ],\n      \"height\": [\n        \"288\",\n        1\n      ],\n      \"batch_size\": 1\n    },\n    \"class_type\": \"EmptyLatentImage\",\n    \"_meta\": {\n      \"title\": \"Empty Latent Image\"\n    }\n  },\n  \"30:250\": {\n    \"inputs\": {\n      \"model_name\": \"realesrganX4plus_v50.safetensors\"\n    },\n    \"class_type\": \"UpscaleModelLoader\",\n    \"_meta\": {\n      \"title\": \"Load Upscale Model\"\n    }\n  },\n  \"30:295\": {\n    \"inputs\": {\n      \"upscale_method\": \"area\",\n      \"width\": [\n        \"288\",\n        0\n      ],\n      \"height\": [\n        \"288\",\n        1\n      ],\n      \"crop\": \"disabled\",\n      \"image\": [\n        \"30:294\",\n        0\n      ]\n    },\n    \"class_type\": \"ImageScale\",\n    \"_meta\": {\n      \"title\": \"Upscale Image\"\n    }\n  },\n  \"30:293\": {\n    \"inputs\": {\n      \"clip_name\": \"qwen/qwen3-vl-4b-heretic_int8_dynamic_convrot.safetensors\",\n      \"type\": \"krea2\",\n      \"device\": \"default\"\n    },\n    \"class_type\": \"CLIPLoader\",\n    \"_meta\": {\n      \"title\": \"Load CLIP\"\n    }\n  },\n  \"30:6\": {\n    \"inputs\": {\n      \"text\": [\n        \"150\",\n        0\n      ],\n      \"clip\": [\n        \"153\",\n        1\n      ]\n    },\n    \"class_type\": \"CLIPTextEncode\",\n    \"_meta\": {\n      \"title\": \"CLIP Text Encode (Prompt)\"\n    }\n  },\n  \"30:13\": {\n    \"inputs\": {\n      \"conditioning\": [\n        \"30:6\",\n        0\n      ]\n    },\n    \"class_type\": \"ConditioningZeroOut\",\n    \"_meta\": {\n      \"title\": \"Conditioning Zero Out\"\n    }\n  },\n  \"30:12\": {\n    \"inputs\": {\n      \"vae_name\": \"wan/Wan2.1_VAE_upscale2x_imageonly_real_v1_fp8.safetensors\"\n    },\n    \"class_type\": \"VAELoader\",\n    \"_meta\": {\n      \"title\": \"Load VAE\"\n    }\n  },\n  \"30:297\": {\n    \"inputs\": {\n      \"lora_name\": \"krea2/Krea2_TextFusion_Refusal_Reduction.safetensors\",\n      \"strength_model\": 1,\n      \"model\": [\n        \"30:283\",\n        0\n      ]\n    },\n    \"class_type\": \"LoraLoaderModelOnly\",\n    \"_meta\": {\n      \"title\": \"Load LoRA\"\n    }\n  },\n  \"30:283\": {\n    \"inputs\": {\n      \"unet_name\": \"krea/NVFP4_krea2TurboOfficialComfy.safetensors\",\n      \"weight_dtype\": \"default\"\n    },\n    \"class_type\": \"UNETLoader\",\n    \"_meta\": {\n      \"title\": \"Load Diffusion Model\"\n    }\n  }\n};\n\n// Inject the image prompt generated by the AI Agent.\nprompt[\"59\"].inputs.value = imagePrompt;\n\n// Generate a unique seed for this execution.\nconst seed = Math.floor(Math.random() * 4294967295);\nprompt[\"30:135\"].inputs.seed = seed;\nprompt[\"30:53\"].inputs.seed = seed;\n\n// Generate a unique output filename prefix.\nconst now = new Date();\nconst pad = n => String(n).padStart(2, '0');\n\nconst folder = `${now.getFullYear()}${pad(now.getMonth() + 1)}`;\nconst fileTime = `${pad(now.getDate())}${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;\n\nprompt[\"29\"].inputs.filename_prefix = `Krea2/${folder}/${fileTime}`;\n\nreturn [{\n  json: {\n    title,\n    lyrics,\n    image_prompt: imagePrompt,\n    seed,\n    prompt\n  }\n}];"
+        "jsCode": "const imagePrompt = $json.image_prompt;\nconst title = $json.title;\nconst lyrics = $json.lyrics;\nconst runId = $json.run_id;\n\nif (!imagePrompt) throw new Error('image_prompt is empty.');\nif (!runId) throw new Error('run_id is missing.');\n\nconst prompt = {\n  \"29\": {\n    \"inputs\": {\n      \"filename_prefix\": \"Krea2/placeholder\",\n      \"images\": [\"30:295\", 0]\n    },\n    \"class_type\": \"SaveImage\",\n    \"_meta\": {\"title\": \"Save Image\"}\n  },\n  \"59\": {\n    \"inputs\": {\"value\": \"Example prompt\"},\n    \"class_type\": \"PrimitiveStringMultiline\",\n    \"_meta\": {\"title\": \"Prompt\"}\n  },\n  \"150\": {\n    \"inputs\": {\n      \"f_string\": \"{a}\\n\\n{b}\",\n      \"values.a\": [\"153\", 2],\n      \"values.b\": [\"59\", 0]\n    },\n    \"class_type\": \"StringFormat\",\n    \"_meta\": {\"title\": \"Format Text\"}\n  },\n  \"153\": {\n    \"inputs\": {\n      \"__lm_autocomplete_meta_text\": {\n        \"version\": 1,\n        \"textWidgetName\": \"text\",\n        \"lastAccepted\": {\n          \"start\": 0,\n          \"end\": 28,\n          \"insertedText\": \"<lora:MysticXXX_KREA2_v2:1>,\",\n          \"textSnapshot\": \"<lora:MysticXXX_KREA2_v2:1>,\"\n        }\n      },\n      \"text\": \"\",\n      \"loras\": {\"__value__\": []},\n      \"model\": [\"292\", 0],\n      \"clip\": [\"292\", 1]\n    },\n    \"class_type\": \"Lora Loader (LoraManager)\",\n    \"_meta\": {\"title\": \"Lora Loader (LoraManager)\"}\n  },\n  \"288\": {\n    \"inputs\": {\n      \"ResolutionState\": \"{\\\"mode\\\":\\\"custom_ratio\\\",\\\"ratio\\\":\\\"4:3\\\",\\\"w\\\":1536,\\\"h\\\":1152,\\\"custom_w\\\":576,\\\"custom_h\\\":960,\\\"custom_ratio_w\\\":4,\\\"custom_ratio_h\\\":3,\\\"snap\\\":8}\"\n    },\n    \"class_type\": \"PixaromaResolution\",\n    \"_meta\": {\"title\": \"Resolution Pixaroma\"}\n  },\n  \"292\": {\n    \"inputs\": {\n      \"model\": [\"30:283\", 0],\n      \"clip\": [\"30:293\", 0],\n      \"LoraLoaderState\": \"{\\\"version\\\":1,\\\"sep\\\":\\\", \\\",\\\"cacheMode\\\":\\\"last\\\",\\\"loras\\\":[{\\\"name\\\":\\\"krea2/Krea2_TextFusion_Refusal_Reduction.safetensors\\\",\\\"on\\\":true,\\\"sm\\\":1,\\\"sc\\\":1,\\\"triggers\\\":[]},{\\\"name\\\":\\\"krea2/(Krea 2) 8-Step Turbo Distill Rank 256 V2026.1.safetensors\\\",\\\"on\\\":false,\\\"sm\\\":1,\\\"sc\\\":1,\\\"triggers\\\":[]}] }\"\n    },\n    \"class_type\": \"PixaromaLoraLoader\",\n    \"_meta\": {\"title\": \"LoRA Loader Pixaroma\"}\n  },\n  \"30:135\": {\n    \"inputs\": {\n      \"eta\": 0.5,\n      \"sampler_name\": \"linear/rk4_4s\",\n      \"scheduler\": \"simple\",\n      \"steps\": 8,\n      \"steps_to_run\": -1,\n      \"denoise\": 0.3,\n      \"cfg\": 1,\n      \"seed\": 0,\n      \"sampler_mode\": \"resample\",\n      \"bongmath\": false,\n      \"model\": [\"30:179\", 0],\n      \"positive\": [\"30:6\", 0],\n      \"negative\": [\"30:13\", 0],\n      \"latent_image\": [\"30:53\", 0]\n    },\n    \"class_type\": \"ClownsharKSampler_Beta\",\n    \"_meta\": {\"title\": \"ClownsharKSampler\"}\n  },\n  \"30:179\": {\n    \"inputs\": {\n      \"switch\": false,\n      \"on_false\": [\"153\", 0],\n      \"on_true\": [\"30:297\", 0]\n    },\n    \"class_type\": \"ComfySwitchNode\",\n    \"_meta\": {\"title\": \"If/Else Switch\"}\n  },\n  \"30:53\": {\n    \"inputs\": {\n      \"eta\": 0.5,\n      \"sampler_name\": \"linear/euler\",\n      \"scheduler\": \"beta\",\n      \"steps\": 8,\n      \"steps_to_run\": 8,\n      \"denoise\": 1,\n      \"cfg\": 1,\n      \"seed\": 0,\n      \"sampler_mode\": \"standard\",\n      \"bongmath\": false,\n      \"model\": [\"153\", 0],\n      \"positive\": [\"30:6\", 0],\n      \"negative\": [\"30:13\", 0],\n      \"latent_image\": [\"30:5\", 0]\n    },\n    \"class_type\": \"ClownsharKSampler_Beta\",\n    \"_meta\": {\"title\": \"ClownsharKSampler\"}\n  },\n  \"30:140\": {\n    \"inputs\": {\n      \"upscale\": 2,\n      \"tile\": false,\n      \"tile_size\": 512,\n      \"overlap\": 64,\n      \"temporal_size\": 4096,\n      \"temporal_overlap\": 64,\n      \"samples\": [\"30:135\", 0],\n      \"vae\": [\"30:12\", 0]\n    },\n    \"class_type\": \"VAEUtils_VAEDecodeTiled\",\n    \"_meta\": {\"title\": \"VAE Decode (VAE Utils)\"}\n  },\n  \"30:294\": {\n    \"inputs\": {\n      \"upscale_model\": [\"30:250\", 0],\n      \"image\": [\"30:140\", 0]\n    },\n    \"class_type\": \"ImageUpscaleWithModel\",\n    \"_meta\": {\"title\": \"Upscale Image (using Model)\"}\n  },\n  \"30:5\": {\n    \"inputs\": {\n      \"width\": [\"288\", 0],\n      \"height\": [\"288\", 1],\n      \"batch_size\": 1\n    },\n    \"class_type\": \"EmptyLatentImage\",\n    \"_meta\": {\"title\": \"Empty Latent Image\"}\n  },\n  \"30:250\": {\n    \"inputs\": {\"model_name\": \"realesrganX4plus_v50.safetensors\"},\n    \"class_type\": \"UpscaleModelLoader\",\n    \"_meta\": {\"title\": \"Load Upscale Model\"}\n  },\n  \"30:295\": {\n    \"inputs\": {\n      \"upscale_method\": \"area\",\n      \"width\": [\"288\", 0],\n      \"height\": [\"288\", 1],\n      \"crop\": \"disabled\",\n      \"image\": [\"30:294\", 0]\n    },\n    \"class_type\": \"ImageScale\",\n    \"_meta\": {\"title\": \"Upscale Image\"}\n  },\n  \"30:293\": {\n    \"inputs\": {\n      \"clip_name\": \"qwen/qwen3-vl-4b-heretic_int8_dynamic_convrot.safetensors\",\n      \"type\": \"krea2\",\n      \"device\": \"default\"\n    },\n    \"class_type\": \"CLIPLoader\",\n    \"_meta\": {\"title\": \"Load CLIP\"}\n  },\n  \"30:6\": {\n    \"inputs\": {\n      \"text\": [\"150\", 0],\n      \"clip\": [\"153\", 1]\n    },\n    \"class_type\": \"CLIPTextEncode\",\n    \"_meta\": {\"title\": \"CLIP Text Encode (Prompt)\"}\n  },\n  \"30:13\": {\n    \"inputs\": {\"conditioning\": [\"30:6\", 0]},\n    \"class_type\": \"ConditioningZeroOut\",\n    \"_meta\": {\"title\": \"Conditioning Zero Out\"}\n  },\n  \"30:12\": {\n    \"inputs\": {\n      \"vae_name\": \"wan/Wan2.1_VAE_upscale2x_imageonly_real_v1_fp8.safetensors\"\n    },\n    \"class_type\": \"VAELoader\",\n    \"_meta\": {\"title\": \"Load VAE\"}\n  },\n  \"30:297\": {\n    \"inputs\": {\n      \"lora_name\": \"krea2/Krea2_TextFusion_Refusal_Reduction.safetensors\",\n      \"strength_model\": 1,\n      \"model\": [\"30:283\", 0]\n    },\n    \"class_type\": \"LoraLoaderModelOnly\",\n    \"_meta\": {\"title\": \"Load LoRA\"}\n  },\n  \"30:283\": {\n    \"inputs\": {\n      \"unet_name\": \"krea/NVFP4_krea2TurboOfficialComfy.safetensors\",\n      \"weight_dtype\": \"default\"\n    },\n    \"class_type\": \"UNETLoader\",\n    \"_meta\": {\"title\": \"Load Diffusion Model\"}\n  }\n};\n\nprompt[\"59\"].inputs.value = imagePrompt;\n\nconst seed = Math.floor(Math.random() * 4294967295);\nprompt[\"30:135\"].inputs.seed = seed;\nprompt[\"30:53\"].inputs.seed = seed;\n\nprompt[\"29\"].inputs.filename_prefix = `Krea2/${runId}`;\n\nreturn [{\n  json: {\n    run_id: runId,\n    title,\n    lyrics,\n    image_prompt: imagePrompt,\n    seed,\n    prompt\n  }\n}];"
       },
-      "id": "194a927a-3aa5-4118-ac3a-c745b66fbcfc",
+      "id": "94cd6a1b-ffa9-4557-a664-c4b26406c200",
       "name": "Build ComfyUI Payload",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -4368,
-        48
+        -6304,
+        80
       ]
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "http://host.docker.internal:8188/prompt",
+        "url": "={{ ($env.COMFYUI_BASE_URL || 'http://host.docker.internal:8188') + '/prompt' }}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -69,67 +112,53 @@
         "jsonBody": "={{ { prompt: $json.prompt } }}",
         "options": {}
       },
-      "id": "1a7f9c0f-1a86-4fbd-b814-1a12f601dc62",
+      "id": "ddba71bb-d6e8-4251-b6f8-ca45e167691e",
       "name": "POST /prompt",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        -4080,
-        48
+        -6064,
+        80
       ]
     },
     {
       "parameters": {
-        "jsCode": "const promptId = $json.prompt_id;\n\nif (!promptId) {\n  throw new Error(\n    'ComfyUI did not return prompt_id. Response: ' + JSON.stringify($json)\n  );\n}\n\nconst source = $('Build ComfyUI Payload').first().json;\n\nreturn [{\n  json: {\n    prompt_id: promptId,\n    title: source.title,\n    lyrics: source.lyrics,\n    image_prompt: source.image_prompt,\n    seed: source.seed\n  }\n}];"
+        "jsCode": "const promptId = $json.prompt_id;\n\nif (!promptId) {\n  throw new Error('ComfyUI did not return prompt_id. Response: ' + JSON.stringify($json));\n}\n\nconst source = $('Build ComfyUI Payload').first().json;\n\nreturn [{\n  json: {\n    prompt_id: promptId,\n    run_id: source.run_id,\n    title: source.title,\n    lyrics: source.lyrics,\n    image_prompt: source.image_prompt,\n    seed: source.seed\n  }\n}];"
       },
-      "id": "03274cf6-5509-430a-9133-523452a99e1a",
+      "id": "2d855f92-b489-4ca4-aff0-76799b54d1dc",
       "name": "Store Prompt ID",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -3840,
-        48
+        -5824,
+        80
       ]
     },
     {
       "parameters": {
-        "amount": 3
-      },
-      "id": "c7d8be56-b6df-4050-b72e-171dbba4f1d6",
-      "name": "Wait 3 Seconds",
-      "type": "n8n-nodes-base.wait",
-      "typeVersion": 1.1,
-      "position": [
-        -3600,
-        48
-      ],
-      "webhookId": "a8f48302-8e2f-4961-95a4-488da3458c42"
-    },
-    {
-      "parameters": {
-        "url": "={{ 'http://host.docker.internal:8188/history/' + $('Store Prompt ID').first().json.prompt_id }}",
+        "url": "={{ ($env.COMFYUI_BASE_URL || 'http://host.docker.internal:8188') + '/history/' + $('Store Prompt ID').first().json.prompt_id }}",
         "options": {}
       },
-      "id": "9ecf47c1-de7d-4219-afae-211ff86aa5b5",
+      "id": "0ffabff0-089a-433d-86e9-db9e32b52a46",
       "name": "GET /history",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        -3360,
-        48
+        -5344,
+        80
       ]
     },
     {
       "parameters": {
-        "jsCode": "const state = $('Store Prompt ID').first().json;\nconst promptId = state.prompt_id;\nconst history = $json[promptId];\n\nlet done = false;\nlet failed = false;\nlet image = null;\nlet status = null;\n\nif (history) {\n  status = history.status || {};\n\n  const statusText = JSON.stringify(status).toLowerCase();\n\n  failed =\n    statusText.includes('error') ||\n    statusText.includes('exception') ||\n    statusText.includes('execution_error');\n\n  const node29 = history.outputs?.['29'];\n\n  if (node29?.images?.length) {\n    image = node29.images[0];\n  }\n\n  done = status.completed === true || !!image;\n}\n\nreturn [{\n  json: {\n    prompt_id: promptId,\n    title: state.title,\n    lyrics: state.lyrics,\n    image_prompt: state.image_prompt,\n    seed: state.seed,\n    done,\n    failed,\n    image,\n    status\n  }\n}];"
+        "jsCode": "const state = $('Store Prompt ID').first().json;\nconst promptId = state.prompt_id;\nconst history = $json[promptId];\n\nlet done = false;\nlet failed = false;\nlet image = null;\nlet status = null;\n\nif (history) {\n  status = history.status || {};\n  const statusText = JSON.stringify(status).toLowerCase();\n\n  failed = statusText.includes('error') ||\n           statusText.includes('exception') ||\n           statusText.includes('execution_error');\n\n  const node29 = history.outputs?.['29'];\n\n  if (node29?.images?.length) {\n    image = node29.images[0];\n  }\n\n  done = status.completed === true || !!image;\n}\n\nreturn [{\n  json: {\n    prompt_id: promptId,\n    run_id: state.run_id,\n    title: state.title,\n    lyrics: state.lyrics,\n    image_prompt: state.image_prompt,\n    seed: state.seed,\n    done,\n    failed,\n    image,\n    status\n  }\n}];"
       },
-      "id": "7b229a07-7111-4432-abe5-7458a1498341",
+      "id": "8926d550-0063-442d-8d38-5b848a9704f9",
       "name": "Check Done",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -3120,
-        48
+        -5104,
+        80
       ]
     },
     {
@@ -157,67 +186,108 @@
         },
         "options": {}
       },
-      "id": "fa4538f6-3377-4bed-85b8-17217dd40917",
+      "id": "aea713b8-dcf4-4d98-8005-ead091af57f7",
       "name": "Done?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        -2880,
-        48
+        -4864,
+        80
       ]
     },
     {
       "parameters": {
-        "jsCode": "const state = $('Check Done').first().json;\n\nif (state.failed) {\n  throw new Error(\n    `ComfyUI execution failed. prompt_id=${state.prompt_id}\\n` +\n    JSON.stringify(state.status, null, 2)\n  );\n}\n\nif (!state.image) {\n  throw new Error(\n    `ComfyUI reports done but node 29 has no image. prompt_id=${state.prompt_id}`\n  );\n}\n\nreturn [{\n  json: {\n    prompt_id: state.prompt_id,\n    title: state.title,\n    lyrics: state.lyrics,\n    image_prompt: state.image_prompt,\n    seed: state.seed,\n    filename: state.image.filename,\n    subfolder: state.image.subfolder || '',\n    type: state.image.type || 'output'\n  }\n}];"
+        "jsCode": "const state = $('Check Done').first().json;\n\nif (state.failed) {\n  throw new Error(\n    `ComfyUI execution failed. prompt_id=${state.prompt_id}\\n` +\n    JSON.stringify(state.status, null, 2)\n  );\n}\n\nif (!state.image) {\n  throw new Error(`ComfyUI reports done but node 29 has no image. prompt_id=${state.prompt_id}`);\n}\n\nreturn [{\n  json: {\n    prompt_id: state.prompt_id,\n    run_id: state.run_id,\n    title: state.title,\n    lyrics: state.lyrics,\n    image_prompt: state.image_prompt,\n    seed: state.seed,\n    filename: state.image.filename,\n    subfolder: state.image.subfolder || '',\n    type: state.image.type || 'output'\n  }\n}];"
       },
-      "id": "8487ed3b-7350-419d-a60d-cdef65a3b9c4",
+      "id": "9e86c99b-b1b1-486c-9030-90cc01ec98f1",
       "name": "Prepare Image",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -2640,
-        -64
+        -4624,
+        -32
       ]
     },
     {
       "parameters": {
-        "url": "={{ 'http://host.docker.internal:8188' + '/view?filename=' + encodeURIComponent($json.filename) + '&subfolder=' + encodeURIComponent($json.subfolder) + '&type=' + encodeURIComponent($json.type) }}",
+        "url": "={{ ($env.COMFYUI_BASE_URL || 'http://host.docker.internal:8188') + '/view?filename=' + encodeURIComponent($json.filename) + '&subfolder=' + encodeURIComponent($json.subfolder) + '&type=' + encodeURIComponent($json.type) }}",
         "options": {}
       },
-      "id": "54a955f7-58a3-422c-a1dd-691b09937a4d",
+      "id": "2ec4696f-e4eb-4318-b925-57aceece0fad",
       "name": "GET /view",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        -2400,
-        -64
+        -4384,
+        -32
       ]
     },
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const state = $('Prepare Image').first().json;\n\nreturn {\n  json: {\n    prompt_id: state.prompt_id,\n    title: state.title,\n    lyrics: state.lyrics,\n    image_prompt: state.image_prompt,\n    seed: state.seed,\n    filename: state.filename\n  },\n  binary: $input.item.binary\n};"
+        "jsCode": "const state = $('Prepare Image').first().json;\n\nreturn {\n  json: {\n    run_id: state.run_id,\n    prompt_id: state.prompt_id,\n    title: state.title,\n    lyrics: state.lyrics,\n    image_prompt: state.image_prompt,\n    seed: state.seed,\n    filename: state.filename,\n\n    save_dir: `/data/productions`,\n\n    image_path: `/data/productions/${state.run_id}-image.png`,\n\n    lyrics_path: `/data/productions/${state.run_id}-lyrics.txt`\n  },\n  binary: $input.item.binary\n};"
       },
-      "id": "8b950844-2674-4c12-96b4-68a0e85db57d",
-      "name": "Prepare Telegram",
+      "id": "fc4dd2e5-d210-42f9-9a9c-ef1f745b0e4f",
+      "name": "Prepare Local Assets",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -2160,
-        -64
+        -4144,
+        -32
+      ]
+    },
+    {
+      "parameters": {
+        "fileName": "={{ $json.image_path }}",
+        "options": {}
+      },
+      "id": "4eabfa4d-1dae-47e8-ae5f-62b08219df30",
+      "name": "Save Image to /data",
+      "type": "n8n-nodes-base.writeBinaryFile",
+      "typeVersion": 1,
+      "position": [
+        -3760,
+        176
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const lyrics = $('Prepare Local Assets').first().json.lyrics;\nconst state = $('Prepare Local Assets').first().json;\n\nreturn {\n  json: state,\n  binary: {\n    data: {\n      data: Buffer.from(lyrics, 'utf8').toString('base64'),\n      mimeType: 'text/plain; charset=utf-8',\n      fileName: 'lyrics.txt'\n    }\n  }\n};"
+      },
+      "id": "45b99a11-c3fd-4da1-aba7-c0579f106741",
+      "name": "Prepare Lyrics File",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -3760,
+        -16
+      ]
+    },
+    {
+      "parameters": {
+        "fileName": "={{ $json.lyrics_path }}",
+        "options": {}
+      },
+      "id": "ccd5b36a-fc03-4050-a808-4dd0d54a3862",
+      "name": "Save Lyrics to /data",
+      "type": "n8n-nodes-base.writeBinaryFile",
+      "typeVersion": 1,
+      "position": [
+        -3520,
+        -16
       ]
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "https://api.telegram.org/botTOKEN/sendPhoto",
+        "url": "={{ 'https://api.telegram.org/bot' + $env.TELEGRAM_BOT_TOKEN + '/sendPhoto' }}",
         "sendBody": true,
         "contentType": "multipart-form-data",
         "bodyParameters": {
           "parameters": [
             {
               "name": "chat_id",
-              "value": "=5036211673"
+              "value": "={{ $env.TELEGRAM_CHAT_ID }}"
             },
             {
               "parameterType": "formBinaryData",
@@ -232,83 +302,26 @@
         },
         "options": {}
       },
-      "id": "7209595a-891c-40f3-a6f1-d53b29ae59ee",
-      "name": "Telegram",
+      "id": "9aea4d04-9c03-471e-bb53-ebf6edf428c7",
+      "name": "Telegram Image",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        -1920,
-        -64
+        -3520,
+        -144
       ]
     },
     {
       "parameters": {
-        "amount": 3
-      },
-      "id": "5b1e562a-0a28-494a-be8c-941cc26b10ee",
-      "name": "Wait 3 Seconds - Poll",
-      "type": "n8n-nodes-base.wait",
-      "typeVersion": 1.1,
-      "position": [
-        -2640,
-        112
-      ],
-      "webhookId": "ecc86ce5-4c04-4dfa-ad34-bd7e42cbc91f"
-    },
-    {
-      "parameters": {
-        "model": {
-          "__rl": true,
-          "value": "gemma-4-e4b",
-          "mode": "list",
-          "cachedResultName": "gemma-4-e4b"
-        },
-        "responsesApiEnabled": false,
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
-      "typeVersion": 1.3,
-      "position": [
-        -4896,
-        304
-      ],
-      "id": "d12c1e55-e258-4120-a838-bc2e45520720",
-      "name": "OpenAI Chat Model",
-      "credentials": {
-        "openAiApi": {
-          "id": "lgv031F2iR39TejN",
-          "name": "LM Studio"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "promptType": "define",
-        "text": "={{ $json.verse }}",
-        "options": {
-          "systemMessage": "You are a professional songwriter and visual prompt designer.\n\nThe user gives you a verse, concept, or idea for a song.\n\nYour job is to create:\n1. A song title.\n2. Complete original lyrics.\n3. A detailed image-generation prompt for an album-cover / music artwork.\n\nThe requested language is provided in the user input.\n\nIMPORTANT OUTPUT RULES:\n- Return ONLY valid JSON.\n- Do NOT use Markdown.\n- Do NOT use ```json code fences.\n- Do NOT add explanations before or after the JSON.\n- Use exactly these three fields:\n  title\n  lyrics\n  image_prompt\n- Do not add any other fields.\n\nJSON format:\n{\n  \"title\": \"Song title\",\n  \"lyrics\": \"Complete lyrics\",\n  \"image_prompt\": \"Detailed visual prompt\"\n}\n\nLYRICS REQUIREMENTS:\n- Write completely original lyrics.\n- Match the requested language.\n- Make the lyrics coherent and singable.\n- Use sections such as [Verse 1], [Pre-Chorus], [Chorus], [Verse 2], [Bridge], [Outro] when appropriate.\n- Do not copy existing copyrighted lyrics.\n\nIMAGE PROMPT REQUIREMENTS:\n- Create a cinematic, detailed visual prompt.\n- Describe subject, environment, atmosphere, lighting, composition, depth, camera perspective and visual style.\n- Make it suitable for a high-quality music cover.\n- Do NOT request text, typography, letters, logos, captions or watermarks in the generated image.\n- The prompt must be suitable for the Krea/Krea2 image workflow used by ComfyUI.\n\nThe image_prompt must describe the visual concept only. Do not include the song lyrics in image_prompt."
-        }
-      },
-      "type": "@n8n/n8n-nodes-langchain.agent",
-      "typeVersion": 3.1,
-      "position": [
-        -4896,
-        48
-      ],
-      "id": "5f09a1ff-1cc8-4f8b-993d-163e0cdda58e",
-      "name": "AI Agent1"
-    },
-    {
-      "parameters": {
         "method": "POST",
-        "url": "https://api.telegram.org/botTOKEN/sendMessage",
+        "url": "={{ 'https://api.telegram.org/bot' + $env.TELEGRAM_BOT_TOKEN + '/sendMessage' }}",
         "sendBody": true,
         "contentType": "multipart-form-data",
         "bodyParameters": {
           "parameters": [
             {
               "name": "chat_id",
-              "value": "=5036211673"
+              "value": "={{ $env.TELEGRAM_CHAT_ID }}"
             },
             {
               "name": "text",
@@ -318,25 +331,26 @@
         },
         "options": {}
       },
-      "id": "7903c4f9-b3c1-40f2-b723-dc8a01b09484",
-      "name": "Telegram1",
+      "id": "f587be4a-6faf-4c0d-81c6-6b5d5e14c301",
+      "name": "Telegram Lyrics",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        -1920,
-        112
+        -3520,
+        -272
       ]
     },
     {
       "parameters": {},
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3.2,
+      "id": "e315db26-9db2-4963-89b6-f377da42c8f6",
+      "name": "Wait 5 Seconds",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
       "position": [
-        -1648,
-        32
+        -5584,
+        80
       ],
-      "id": "e054d1ad-9dde-4673-bc78-6013351b9a14",
-      "name": "Merge"
+      "webhookId": "aa290757-2f42-4045-8ca8-ac138cb145ea"
     }
   ],
   "pinData": {},
@@ -358,6 +372,28 @@
           {
             "node": "AI Agent1",
             "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent1": {
+      "main": [
+        [
+          {
+            "node": "Parse Agent JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
             "index": 0
           }
         ]
@@ -400,18 +436,7 @@
       "main": [
         [
           {
-            "node": "Wait 3 Seconds",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Wait 3 Seconds": {
-      "main": [
-        [
-          {
-            "node": "GET /history",
+            "node": "Wait 5 Seconds",
             "type": "main",
             "index": 0
           }
@@ -451,18 +476,7 @@
         ],
         [
           {
-            "node": "Wait 3 Seconds - Poll",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Wait 3 Seconds - Poll": {
-      "main": [
-        [
-          {
-            "node": "GET /history",
+            "node": "Wait 5 Seconds",
             "type": "main",
             "index": 0
           }
@@ -484,69 +498,57 @@
       "main": [
         [
           {
-            "node": "Prepare Telegram",
+            "node": "Prepare Local Assets",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Prepare Telegram": {
+    "Prepare Local Assets": {
       "main": [
         [
           {
-            "node": "Telegram",
+            "node": "Prepare Lyrics File",
             "type": "main",
             "index": 0
           },
           {
-            "node": "Telegram1",
+            "node": "Telegram Image",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Telegram Lyrics",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Save Image to /data",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "OpenAI Chat Model": {
-      "ai_languageModel": [
-        [
-          {
-            "node": "AI Agent1",
-            "type": "ai_languageModel",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "AI Agent1": {
+    "Prepare Lyrics File": {
       "main": [
         [
           {
-            "node": "Parse Agent JSON",
+            "node": "Save Lyrics to /data",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Telegram": {
+    "Wait 5 Seconds": {
       "main": [
         [
           {
-            "node": "Merge",
+            "node": "GET /history",
             "type": "main",
             "index": 0
-          }
-        ]
-      ]
-    },
-    "Telegram1": {
-      "main": [
-        [
-          {
-            "node": "Merge",
-            "type": "main",
-            "index": 1
           }
         ]
       ]
@@ -557,7 +559,7 @@
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "d948f50f-11ef-4441-a23d-d2d90a7377e8",
+  "versionId": "ac0afdea-df4e-4628-9dea-83bff78800f2",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "5b3bfaa0bfb34dcd6a48dec4404a2cb3bcc519d830c46a68b973b8ab503454a0"
