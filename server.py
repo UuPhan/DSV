@@ -119,7 +119,32 @@ class BurnLyricsRequest(BaseModel):
 
     overwrite: bool = True
 
+class PrependIntroRequest(BaseModel):
+    intro: str
+    main: str
+    output: str
 
+    video_codec: str = Field(
+        default="h264_nvenc",
+        pattern="^(h264_nvenc|hevc_nvenc|av1_nvenc)$",
+    )
+
+    preset: str = Field(
+        default="p5",
+        pattern="^p[1-7]$",
+    )
+
+    cq: int = Field(
+        default=23,
+        ge=0,
+        le=51,
+    )
+
+    audio_codec: str = "aac"
+    audio_bitrate: str = "192k"
+
+    overwrite: bool = True
+    
 # ============================================================
 # SAFE PATH
 # ============================================================
@@ -532,13 +557,49 @@ def encode(request: EncodeRequest):
 
         "-i",
         str(input_path),
+    ]
 
-        "-map",
-        "0:v:0",
+    # --------------------------------------------------------
+    # VIDEO
+    #
+    # Có filter_complex:
+    #   [v] = video đã được filter, ví dụ drawtext.
+    #
+    # Không có filter:
+    #   dùng video gốc.
+    # --------------------------------------------------------
 
+    if request.filter_complex:
+        command.extend([
+            "-filter_complex",
+            request.filter_complex,
+
+            "-map",
+            "[v]",
+        ])
+    else:
+        command.extend([
+            "-map",
+            "0:v:0",
+        ])
+
+    # --------------------------------------------------------
+    # AUDIO
+    # --------------------------------------------------------
+
+    command.extend([
         "-map",
         "0:a?",
+    ])
 
+    # --------------------------------------------------------
+    # VIDEO ENCODE
+    #
+    # Vì video được encode lại nên drawtext đã trở thành pixel.
+    # Không có subtitle stream được tạo ra.
+    # --------------------------------------------------------
+
+    command.extend([
         "-c:v",
         request.video_codec,
 
@@ -550,35 +611,22 @@ def encode(request: EncodeRequest):
 
         "-pix_fmt",
         "yuv420p",
+    ])
 
+    # --------------------------------------------------------
+    # AUDIO ENCODE
+    # --------------------------------------------------------
+
+    command.extend([
         "-c:a",
         request.audio_codec,
-    ]
-    
-    if request.filter_complex:
-        command.extend([
-            "-filter_complex",
-            request.filter_complex,
-            "-map",
-            "[v]",
-            "-map",
-            "0:a?",
-        ])
-    else:
-        command.extend([
-            "-map",
-            "0:v:0",
-            "-map",
-            "0:a?",
-        ])    
+    ])
 
     if request.audio_codec != "copy":
-        command.extend(
-            [
-                "-b:a",
-                request.audio_bitrate,
-            ]
-        )
+        command.extend([
+            "-b:a",
+            request.audio_bitrate,
+        ])
 
     command.append(
         str(output_path)
@@ -587,8 +635,10 @@ def encode(request: EncodeRequest):
     run_ffmpeg(command)
 
     validate_output(output_path)
-    
-    duration_seconds = probe_duration(output_path)
+
+    duration_seconds = probe_duration(
+        output_path
+    )
 
     return {
         "status": "ok",
@@ -601,7 +651,7 @@ def encode(request: EncodeRequest):
         "filter_complex": bool(request.filter_complex),
         "size_bytes": output_path.stat().st_size,
         "duration_seconds": duration_seconds,
-    }    
+    }
 
 # ============================================================
 # LOOP + MIX AUDIO
@@ -627,15 +677,8 @@ def loop_mix(request: LoopMixRequest):
     music_path = safe_path(request.music)
     output_path = safe_path(request.output)
 
-    require_file(
-        video_path,
-        "Video file",
-    )
-
-    require_file(
-        music_path,
-        "Music file",
-    )
+    require_file(video_path, "Video file")
+    require_file(music_path, "Music file")
 
     prepare_output(output_path)
 
@@ -654,11 +697,10 @@ def loop_mix(request: LoopMixRequest):
             detail="Music duration must be greater than zero.",
         )
 
+    # Số segment cần để phủ hết thời lượng music.
     segment_count = max(
         1,
-        math.ceil(
-            music_duration / video_duration
-        ),
+        math.ceil(music_duration / video_duration),
     )
 
     command = [
@@ -667,84 +709,79 @@ def loop_mix(request: LoopMixRequest):
         "-loglevel",
         "error",
         "-y" if request.overwrite else "-n",
+
+        # Chỉ một video input.
+        "-i",
+        str(video_path),
+
+        # Music input.
+        "-i",
+        str(music_path),
     ]
-
-    # --------------------------------------------------------
-    # VIDEO INPUTS
-    # --------------------------------------------------------
-
-    for _ in range(segment_count):
-        command.extend(
-            [
-                "-i",
-                str(video_path),
-            ]
-        )
-
-    # --------------------------------------------------------
-    # MUSIC INPUT
-    # --------------------------------------------------------
-
-    music_index = segment_count
-
-    command.extend(
-        [
-            "-i",
-            str(music_path),
-        ]
-    )
-
-    # --------------------------------------------------------
-    # FILTER GRAPH
-    # --------------------------------------------------------
 
     filters = []
 
-    video_labels = []
+    # --------------------------------------------------------
+    # VIDEO
+    #
+    # reverse=false:
+    #   normal → normal → normal → ...
+    #
+    # reverse=true:
+    #   normal → normal → reverse → reverse → ...
+    #   normal → normal → reverse → reverse → ...
+    # --------------------------------------------------------
 
-    for index in range(segment_count):
-        source = f"{index}:v"
-        label = f"v{index}"
+    filters.append(
+        "[0:v]"
+        "setpts=PTS-STARTPTS"
+        "[v_normal]"
+    )
 
-        if request.reverse:
-            filters.append(
-                f"[{source}]"
-                "setpts=PTS-STARTPTS,"
-                "reverse,"
-                "setpts=PTS-STARTPTS"
-                f"[{label}]"
+    if request.reverse:
+        filters.append(
+            "[0:v]"
+            "setpts=PTS-STARTPTS,"
+            "reverse,"
+            "setpts=PTS-STARTPTS"
+            "[v_reverse]"
+        )
+
+        video_sequence = []
+
+        for index in range(segment_count):
+            pattern_index = index % 4
+
+            if pattern_index in (0, 1):
+                video_sequence.append("[v_normal]")
+            else:
+                video_sequence.append("[v_reverse]")
+
+        filters.append(
+            "".join(video_sequence)
+            + f"concat=n={segment_count}:v=1:a=0,"
+            + f"trim=duration={music_duration:.6f},"
+            + "setpts=PTS-STARTPTS"
+            + "[vout]"
+        )
+
+    else:
+        filters.append(
+            "".join(
+                "[v_normal]"
+                for _ in range(segment_count)
             )
-        else:
-            filters.append(
-                f"[{source}]"
-                "setpts=PTS-STARTPTS"
-                f"[{label}]"
-            )
-
-        video_labels.append(
-            f"[{label}]"
+            + f"concat=n={segment_count}:v=1:a=0,"
+            + f"trim=duration={music_duration:.6f},"
+            + "setpts=PTS-STARTPTS"
+            + "[vout]"
         )
 
     # --------------------------------------------------------
-    # CONCAT VIDEO
-    # --------------------------------------------------------
-
-    concat_inputs = "".join(video_labels)
-
-    concat_filter = (
-        f"{concat_inputs}"
-        f"concat=n={segment_count}:v=1:a=0,"
-        f"trim=duration={music_duration:.6f},"
-        "setpts=PTS-STARTPTS"
-        "[vout]"
-    )
-
-    filters.append(concat_filter)
-
-    # --------------------------------------------------------
-    # ORIGINAL VIDEO AUDIO
+    # ORIGINAL AUDIO
     #
-    # Loop audio independently to match music duration.
+    # Audio gốc của visual được loop/pad tới duration music.
+    # Nếu visual không có audio thì bỏ qua.
     # --------------------------------------------------------
 
     filters.append(
@@ -759,11 +796,11 @@ def loop_mix(request: LoopMixRequest):
     )
 
     # --------------------------------------------------------
-    # MUSIC AUDIO
+    # MUSIC
     # --------------------------------------------------------
 
     filters.append(
-        f"[{music_index}:a]"
+        "[1:a]"
         "aresample=48000,"
         "asetpts=PTS-STARTPTS,"
         f"atrim=duration={music_duration:.6f},"
@@ -773,7 +810,7 @@ def loop_mix(request: LoopMixRequest):
     )
 
     # --------------------------------------------------------
-    # AUDIO MIX
+    # MIX AUDIO
     # --------------------------------------------------------
 
     filters.append(
@@ -787,10 +824,6 @@ def loop_mix(request: LoopMixRequest):
     )
 
     filter_complex = ";".join(filters)
-
-    # --------------------------------------------------------
-    # OUTPUT
-    # --------------------------------------------------------
 
     command.extend(
         [
@@ -841,9 +874,7 @@ def loop_mix(request: LoopMixRequest):
 
     validate_output(output_path)
 
-    output_duration = probe_duration(
-        output_path
-    )
+    output_duration = probe_duration(output_path)
 
     return {
         "status": "ok",
@@ -858,6 +889,12 @@ def loop_mix(request: LoopMixRequest):
         "segment_count": segment_count,
 
         "reverse": request.reverse,
+
+        "pattern": (
+            "NORMAL_NORMAL_REVERSE_REVERSE"
+            if request.reverse
+            else "NORMAL"
+        ),
 
         "original_volume": request.original_volume,
         "music_volume": request.music_volume,
@@ -985,6 +1022,8 @@ def burn_lyrics(request: BurnLyricsRequest):
     )
 
     validate_output(output_path)
+    
+    duration_seconds = probe_duration(output_path)
 
     return {
         "status": "ok",
@@ -996,4 +1035,92 @@ def burn_lyrics(request: BurnLyricsRequest):
         "preset": request.preset,
         "cq": request.cq,
         "size_bytes": output_path.stat().st_size,
+        "duration_seconds": duration_seconds
     }
+    
+@app.post("/prepend-intro")
+def prepend_intro(request: PrependIntroRequest):
+    intro_path = safe_path(request.intro)
+    main_path = safe_path(request.main)
+    output_path = safe_path(request.output)
+
+    require_file(intro_path, "Intro video")
+    require_file(main_path, "Main video")
+    prepare_output(output_path)
+
+    command = [
+        FFMPEG,
+        "-hide_banner",
+        "-loglevel",
+        "error",
+        "-y" if request.overwrite else "-n",
+
+        "-i",
+        str(intro_path),
+
+        "-i",
+        str(main_path),
+
+        "-filter_complex",
+        (
+            "[0:v:0]setpts=PTS-STARTPTS[intro_v];"
+            "[1:v:0]setpts=PTS-STARTPTS[main_v];"
+            "[0:a:0]aresample=48000,"
+            "asetpts=PTS-STARTPTS[intro_a];"
+            "[1:a:0]aresample=48000,"
+            "asetpts=PTS-STARTPTS[main_a];"
+            "[intro_v][intro_a][main_v][main_a]"
+            "concat=n=2:v=1:a=1"
+            "[vout][aout]"
+        ),
+
+        "-map",
+        "[vout]",
+
+        "-map",
+        "[aout]",
+
+        "-c:v",
+        request.video_codec,
+
+        "-preset",
+        request.preset,
+
+        "-cq",
+        str(request.cq),
+
+        "-pix_fmt",
+        "yuv420p",
+
+        "-c:a",
+        request.audio_codec,
+
+        "-b:a",
+        request.audio_bitrate,
+
+        "-ar",
+        "48000",
+
+        "-movflags",
+        "+faststart",
+
+        str(output_path),
+    ]
+
+    run_ffmpeg(command)
+    validate_output(output_path)
+
+    duration_seconds = probe_duration(output_path)
+
+    return {
+        "status": "ok",
+        "intro": request.intro,
+        "main": request.main,
+        "output": request.output,
+        "video_codec": request.video_codec,
+        "preset": request.preset,
+        "cq": request.cq,
+        "audio_codec": request.audio_codec,
+        "duration_seconds": duration_seconds,
+        "size_bytes": output_path.stat().st_size,
+    }    
