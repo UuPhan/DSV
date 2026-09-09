@@ -1,0 +1,283 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "const raw = $json;\n\n// ============================================================\n// 1. Resolve input\n// ============================================================\n\n// Hỗ trợ cả:\n// 1. Input trực tiếp từ Build Production State\n// 2. Input sau Read JSON → Extract from File\nconst data = raw.data || raw;\n\n// Canonical production state\nconst state = data.production_state || data;\n\nif (!state || typeof state !== 'object') {\n  throw new Error('Production state is missing or invalid.');\n}\n\n// ============================================================\n// 2. Resolve callback\n// ============================================================\n\nlet callback = null;\n\ntry {\n  callback = $('Parse Callback').first().json;\n} catch (_) {\n  callback = null;\n}\n\nconst run_id = String(\n  state.run_id ||\n  data.run_id ||\n  callback?.run_id ||\n  ''\n).trim();\n\nif (!run_id) {\n  throw new Error('Missing run_id');\n}\n\n// ============================================================\n// 3. Callback / routing\n// ============================================================\n\nconst isCallback = Boolean(\n  callback?.callback_action ||\n  callback?.callback_target ||\n  callback?.callback_id ||\n  callback?.callback_data\n);\n\nconst callback_action =\n  callback?.callback_action || null;\n\nconst callback_target =\n  callback?.callback_target || null;\n\nconst mode =\n  !isCallback\n    ? 'initial'\n    : callback_action === 'regenerate'\n      ? 'regenerate'\n      : callback_action === 'generate_video'\n        ? 'generate_video'\n        : callback_action === 'add_music'\n          ? 'add_music'\n          : callback_action === 'upload'\n            ? 'upload_youtube'\n            : callback_action === 'suno_data'\n              ? 'suno_data'\n              : callback?.mode ||\n                callback?.route ||\n                'initial';\n\n// ============================================================\n// 4. Current lyrics\n// ============================================================\n\nconst lyricsCurrent =\n  state.lyrics?.current || null;\n\nconst lyricsTitle =\n  String(lyricsCurrent?.title || '').trim();\n\nconst lyricsText =\n  String(lyricsCurrent?.lyrics || '').trim();\n\nconst sunoStyle =\n  String(lyricsCurrent?.suno_style || '').trim();\n\nconst lyricsVersion =\n  Number(\n    state.lyrics?.current_version ||\n    lyricsCurrent?.version ||\n    0\n  );\n\n// ============================================================\n// 5. Current image\n// ============================================================\n\nconst image =\n  state.image?.current || null;\n\nconst imagePath =\n  String(image?.path || '').trim();\n\nconst imagePrompt =\n  String(image?.prompt || '').trim();\n\nconst imageVersion =\n  Number(\n    image?.version ||\n    state.image?.current_version ||\n    0\n  );\n\n// ============================================================\n// 6. Video\n// ============================================================\n\nconst video =\n  state.video || {};\n\nconst videoPath =\n  String(video.path || '').trim();\n\nconst videoFilename =\n  String(video.filename || '').trim();\n\nconst videoPrompt =\n  String(video.prompt || '').trim();\n\nconst videoDuration =\n  Number(video.duration_seconds ?? 5);\n\n// ============================================================\n// 7. Audio\n// ============================================================\n\nconst audio =\n  state.audio || {};\n\nconst audioPath =\n  String(audio.path || '').trim();\n\nconst audioFilename =\n  String(audio.filename || '').trim();\n\n// ============================================================\n// 8. Final video\n// ============================================================\n\nconst finalVideo =\n  state.final_video || {};\n\nconst finalVideoPath =\n  String(finalVideo.path || '').trim();\n\nconst finalVideoFilename =\n  String(finalVideo.filename || '').trim();\n\n// ============================================================\n// 9. YouTube metadata\n// ============================================================\n\nconst youtubeMeta =\n  state.youtube_meta || {};\n\nconst youtubeMetaVersion =\n  Number(youtubeMeta.version || 0);\n\n// ============================================================\n// 10. Return normalized runtime input\n// ============================================================\n\nreturn [\n  {\n    json: {\n      // ========================================================\n      // IDENTIFIERS\n      // ========================================================\n\n      run_id,\n\n      chat_id:\n        state.chat_id ??\n        callback?.chat_id ??\n        '',\n\n      message_id:\n        state.message_id ??\n        callback?.message_id ??\n        '',\n\n      user_id:\n        state.user_id ??\n        null,\n\n      username:\n        state.username ??\n        null,\n\n      // ========================================================\n      // CALLBACK\n      // ========================================================\n\n      callback_id:\n        callback?.callback_id ??\n        null,\n\n      callback_data:\n        callback?.callback_data ??\n        null,\n\n      callback_action,\n\n      callback_target,\n\n      // ========================================================\n      // ROUTING\n      // ========================================================\n\n      mode,\n\n      route:\n        callback?.route ??\n        null,\n\n      // ========================================================\n      // PRODUCTION INPUT\n      // ========================================================\n\n      intent:\n        state.intent ??\n        null,\n\n      source_type:\n        state.source_type ??\n        '',\n\n      source_text:\n        state.source_text ??\n        '',\n\n      concept:\n        state.concept ??\n        '',\n\n      language:\n        state.language ??\n        'Vietnamese',\n\n      lyrics_style:\n        state.lyrics_style ??\n        '',\n\n      visual_direction:\n        state.visual_direction ??\n        '',\n\n      requested_action:\n        state.requested_action ??\n        null,\n\n      // ========================================================\n      // LYRICS\n      // ========================================================\n\n      title:\n        lyricsTitle,\n\n      lyrics:\n        lyricsText,\n\n      suno_style:\n        sunoStyle,\n\n      lyrics_version:\n        lyricsVersion,\n\n      lyrics_current:\n        lyricsCurrent,\n\n      lyrics_path:\n        String(lyricsCurrent?.path || '').trim(),\n\n      lyrics_word_count:\n        Number(lyricsCurrent?.word_count || 0),\n\n      // ========================================================\n      // IMAGE\n      // ========================================================\n\n      image_prompt:\n        imagePrompt,\n\n      image_path:\n        imagePath,\n\n      image_version:\n        imageVersion,\n\n      image_current:\n        image,\n\n      image_filename:\n        String(image?.filename || '').trim(),\n\n      image_subfolder:\n        String(image?.subfolder || '').trim(),\n\n      image_type:\n        String(image?.type || '').trim(),\n\n      image_seed:\n        image?.seed ?? null,\n\n      // ========================================================\n      // VIDEO\n      // ========================================================\n\n      video_path:\n        videoPath,\n\n      video_filename:\n        videoFilename,\n\n      video_prompt:\n        videoPrompt,\n\n      video_duration:\n        videoDuration,\n\n      // ========================================================\n      // AUDIO\n      // ========================================================\n\n      audio_path:\n        audioPath,\n\n      audio_filename:\n        audioFilename,\n\n      // ========================================================\n      // FINAL VIDEO\n      // ========================================================\n\n      final_video_path:\n        finalVideoPath,\n\n      final_video_filename:\n        finalVideoFilename,\n\n      // ========================================================\n      // YOUTUBE META\n      // ========================================================\n\n      youtube_meta:\n        youtubeMeta,\n\n      youtube_title:\n        String(youtubeMeta.title || '').trim(),\n\n      youtube_description:\n        String(youtubeMeta.description || '').trim(),\n\n      youtube_tags:\n        Array.isArray(youtubeMeta.tags)\n          ? youtubeMeta.tags\n          : [],\n\n      youtube_hashtags:\n        Array.isArray(youtubeMeta.hashtags)\n          ? youtubeMeta.hashtags\n          : [],\n\n      youtube_category_id:\n        String(youtubeMeta.category_id || '10'),\n\n      youtube_privacy_status:\n        String(youtubeMeta.privacy_status || 'private'),\n\n      youtube_meta_version:\n        youtubeMetaVersion,\n\n      // ========================================================\n      // YOUTUBE UPLOAD\n      // ========================================================\n\n      youtube_upload:\n        state.youtube_upload || null,\n\n      youtube_video_id:\n        state.youtube_upload?.video_id ||\n        null,\n\n      youtube_url:\n        state.youtube_upload?.url ||\n        null,\n\n      // ========================================================\n      // STATUS\n      // ========================================================\n\n      status:\n        state.status || {},\n\n      // ========================================================\n      // FULL CANONICAL STATE\n      // ========================================================\n\n      production_state:\n        state\n    }\n  }\n];"
+      },
+      "id": "f55f369e-4826-44fd-93af-194916fae9eb",
+      "name": "Prepare Upload YouTube",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        544,
+        1520
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "video",
+        "operation": "upload",
+        "title": "={{$('Prepare Upload YouTube').first().json.youtube_meta.title}}",
+        "regionCode": "VN",
+        "categoryId": "={{$('Prepare Upload YouTube').first().json.youtube_meta.category_id}}",
+        "binaryProperty": "=data",
+        "options": {
+          "description": "={{$('Prepare Upload YouTube').first().json.youtube_meta.description}}",
+          "privacyStatus": "={{$('Prepare Upload YouTube').first().json.youtube_meta.privacy_status}}",
+          "tags": "={{$('Prepare Upload YouTube').first().json.youtube_meta.tags.join(', ')}}"
+        }
+      },
+      "id": "47537e30-236f-43e8-8ee1-91978d2e37a2",
+      "name": "YouTube Upload",
+      "type": "n8n-nodes-base.youTube",
+      "typeVersion": 1,
+      "position": [
+        1152,
+        1520
+      ],
+      "credentials": {
+        "youTubeOAuth2Api": {
+          "id": "2cvKz4YZSZWN3oJA",
+          "name": "YouTube Golden Age FM"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const upload = $json;\n\n// ============================================================\n// 1. Get source context from Prepare Upload YouTube\n// ============================================================\n\nconst source = $('Prepare Upload YouTube').first().json;\n\nconst run_id = String(\n  source.run_id ||\n  ''\n);\n\nconst chat_id = source.chat_id;\n\nif (!run_id) {\n  throw new Error('Missing run_id while saving YouTube upload');\n}\n\n// ============================================================\n// 2. Get production state from current workflow data\n// ============================================================\n\nconst state = source.production_state;\n\nif (!state) {\n  throw new Error(\n    `Production state not found while saving YouTube upload: ${run_id}`\n  );\n}\n\n// ============================================================\n// 3. Extract YouTube upload result\n// ============================================================\n\nconst videoId =\n  upload.id ||\n  upload.videoId ||\n  upload.video_id ||\n  null;\n\nconst url =\n  upload.url ||\n  (\n    videoId\n      ? `https://www.youtube.com/watch?v=${videoId}`\n      : null\n  );\n\nif (!videoId) {\n  throw new Error(\n    `YouTube upload succeeded without a video ID: ${run_id}`\n  );\n}\n\nconst uploadedAt = new Date().toISOString();\n\n// ============================================================\n// 4. Update production state\n// ============================================================\n\nstate.youtube_upload = {\n  status: 'uploaded',\n  video_id: videoId,\n  url,\n  uploaded_at: uploadedAt,\n  metadata_version: Number(\n    state.youtube_meta?.version || 0\n  )\n};\n\nstate.status = state.status || {};\nstate.status.youtube_upload = 'ready';\n\nstate.updated_at = uploadedAt;\n\n// ============================================================\n// 5. Return updated production state\n//    → Convert to File\n//    → Write JSON\n// ============================================================\n\nreturn [\n  {\n    json: {\n      ...source,\n\n      run_id,\n      chat_id,\n\n      production_state: state,\n\n      youtube_upload: state.youtube_upload,\n\n      state_saved: false\n    }\n  }\n];"
+      },
+      "id": "cd908e05-d77e-4121-9cff-d2cfbe3c91a0",
+      "name": "Save YouTube Upload Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1456,
+        1520
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://api.telegram.org/bot' + $env.TELEGRAM_BOT_TOKEN + '/sendMessage' }}",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "chat_id",
+              "value": "={{$json.chat_id}}"
+            },
+            {
+              "name": "text",
+              "value": "={{ $json.youtube_upload.url ? 'YouTube upload thành công.\\n\\nVideo ID: ' + ($json.youtube_upload.video_id || 'N/A') + '\\n\\n' + $json.youtube_upload.url : 'YouTube upload thành công nhưng không lấy được URL từ response.' }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "aa6b8728-ff6d-4475-9bdd-5e3dc06d416d",
+      "name": "Telegram - YouTube Upload Result",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1744,
+        1520
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $json;\nconst chat_id = input.chat_id ?? input.callback_chat_id;\nif (!chat_id) throw new Error('Missing chat_id for UI notification.');\nreturn [{ json: { ...input, ui_chat_id: chat_id, ui_text: '☁️ Đang upload lên YouTube...' } }];"
+      },
+      "id": "aec7aa29-3474-4e57-bd29-be22fcb525cf",
+      "name": "UI - Start YouTube Upload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        848,
+        1280
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{$env.TELEGRAM_BOT_TOKEN}}/sendMessage",
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "chat_id",
+              "value": "={{$json.ui_chat_id}}"
+            },
+            {
+              "name": "text",
+              "value": "={{$json.ui_text}}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "e757d6a9-8a8d-4ac8-a716-813b7eb561c3",
+      "name": "UI - Start YouTube Upload Telegram",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1088,
+        1280
+      ]
+    },
+    {
+      "parameters": {
+        "filePath": "={{$json.final_video_path}}"
+      },
+      "id": "e90e9629-c9a8-4b7a-a5b3-c2b3f488957d",
+      "name": "Youtube: Read Final Video",
+      "type": "n8n-nodes-base.readBinaryFile",
+      "typeVersion": 1,
+      "position": [
+        848,
+        1520
+      ]
+    },
+    {
+      "parameters": {
+        "fileSelector": "={{ '/data/productions/' + $json.run_id + '.json' }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        1520
+      ],
+      "id": "d9d189cf-840f-4f2a-8962-8b5f4d5af4e6",
+      "name": "Read Production JSON4"
+    },
+    {
+      "parameters": {
+        "operation": "fromJson",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        256,
+        1520
+      ],
+      "id": "53cbe5b4-56a2-4477-a763-1d1b0194e5dd",
+      "name": "Extract Production JSON4"
+    }
+  ],
+  "connections": {
+    "Prepare Upload YouTube": {
+      "main": [
+        [
+          {
+            "node": "Youtube: Read Final Video",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "UI - Start YouTube Upload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "YouTube Upload": {
+      "main": [
+        [
+          {
+            "node": "Save YouTube Upload Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save YouTube Upload Result": {
+      "main": [
+        [
+          {
+            "node": "Telegram - YouTube Upload Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "UI - Start YouTube Upload": {
+      "main": [
+        [
+          {
+            "node": "UI - Start YouTube Upload Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Youtube: Read Final Video": {
+      "main": [
+        [
+          {
+            "node": "YouTube Upload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Production JSON4": {
+      "main": [
+        [
+          {
+            "node": "Extract Production JSON4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Production JSON4": {
+      "main": [
+        [
+          {
+            "node": "Prepare Upload YouTube",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "nodeGroups": [
+    {
+      "id": "1c148e98-14c1-464b-9cdf-71509d9c7c55",
+      "name": "YOUTUBE",
+      "nodeIds": [
+        "f55f369e-4826-44fd-93af-194916fae9eb",
+        "47537e30-236f-43e8-8ee1-91978d2e37a2",
+        "cd908e05-d77e-4121-9cff-d2cfbe3c91a0",
+        "aa6b8728-ff6d-4475-9bdd-5e3dc06d416d",
+        "aec7aa29-3474-4e57-bd29-be22fcb525cf",
+        "e757d6a9-8a8d-4ac8-a716-813b7eb561c3",
+        "e90e9629-c9a8-4b7a-a5b3-c2b3f488957d",
+        "d9d189cf-840f-4f2a-8962-8b5f4d5af4e6",
+        "53cbe5b4-56a2-4477-a763-1d1b0194e5dd"
+      ]
+    }
+  ],
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "5b3bfaa0bfb34dcd6a48dec4404a2cb3bcc519d830c46a68b973b8ab503454a0"
+  }
+}
