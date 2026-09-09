@@ -130,6 +130,11 @@ def run_command(
     command: list[str],
     timeout: int = 3600,
 ):
+    print("=" * 80, flush=True)
+    print("RUN COMMAND", flush=True)
+    print(" ".join(command), flush=True)
+    print("=" * 80, flush=True)
+
     try:
         result = subprocess.run(
             command,
@@ -138,12 +143,21 @@ def run_command(
             timeout=timeout,
             check=False,
         )
-
     except subprocess.TimeoutExpired:
+        print("FFMPEG TIMEOUT", flush=True)
+
         raise HTTPException(
             status_code=504,
             detail="FFmpeg process timed out",
         )
+
+    print("=" * 80, flush=True)
+    print(f"RETURN CODE: {result.returncode}", flush=True)
+    print("STDOUT:", flush=True)
+    print(result.stdout[-5000:], flush=True)
+    print("STDERR:", flush=True)
+    print(result.stderr[-20000:], flush=True)
+    print("=" * 80, flush=True)
 
     return result
 
@@ -186,8 +200,7 @@ def probe_duration(path: Path) -> float:
     result = subprocess.run(
         [
             FFPROBE,
-            "-v",
-            "error",
+            "-v", "error",
             "-show_entries",
             "format=duration",
             "-of",
@@ -214,38 +227,67 @@ def probe_duration(path: Path) -> float:
             },
         )
 
-    # ffprobe đôi khi có thể trả nhiều dòng.
-    # Lấy dòng đầu tiên có thể parse thành float.
-    duration = None
-
-    for line in stdout.splitlines():
-        line = line.strip()
-
-        if not line:
-            continue
-
+    if stdout and stdout != "N/A":
         try:
-            value = float(line)
+            duration = float(stdout)
 
-            if math.isfinite(value) and value > 0:
-                duration = value
-                break
-
+            if math.isfinite(duration) and duration > 0:
+                return duration
         except ValueError:
-            continue
+            pass
 
-    if duration is None:
-        raise HTTPException(
-            status_code=500,
-            detail={
-                "error": "Unable to parse output duration.",
-                "path": str(path),
-                "ffprobe_stdout": stdout,
-                "ffprobe_stderr": stderr,
-            },
+    # --------------------------------------------------------
+    # FALLBACK: let ffmpeg decode the stream to EOF
+    # --------------------------------------------------------
+
+    result = subprocess.run(
+        [
+            FFMPEG,
+            "-hide_banner",
+            "-i",
+            str(path),
+            "-map",
+            "0:a:0",
+            "-f",
+            "null",
+            "-",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    stderr = result.stderr
+
+    import re
+
+    matches = re.findall(
+        r"time=(\d+):(\d+):(\d+(?:\.\d+)?)",
+        stderr,
+    )
+
+    if matches:
+        hours, minutes, seconds = matches[-1]
+
+        duration = (
+            int(hours) * 3600
+            + int(minutes) * 60
+            + float(seconds)
         )
 
-    return duration
+        if math.isfinite(duration) and duration > 0:
+            return duration
+
+    raise HTTPException(
+        status_code=500,
+        detail={
+            "error": "Unable to determine media duration.",
+            "path": str(path),
+            "ffprobe_stdout": stdout,
+            "ffprobe_stderr": stderr,
+            "ffmpeg_stderr_tail": stderr[-5000:],
+        },
+    )
 
 
 def probe_fps(path: Path) -> tuple[int, int]:
@@ -563,8 +605,117 @@ def encode(request: EncodeRequest):
     }
 
 # ============================================================
-# LOOP + CROSSFADE + AUDIO MIX
+# LOOP + REVERSE + BLEND + AUDIO MIX
 # ============================================================
+
+def probe_duration_with_ffmpeg(path: Path) -> float:
+    """
+    Determine media duration using FFmpeg itself.
+
+    This is used when ffprobe cannot obtain a usable duration,
+    which can happen with WebM/Opus files without duration metadata.
+    """
+
+    result = subprocess.run(
+        [
+            FFMPEG,
+            "-hide_banner",
+            "-loglevel", "info",
+            "-i",
+            str(path),
+            "-map", "0:a:0",
+            "-f", "null",
+            "-",
+        ],
+        capture_output=True,
+        text=True,
+        timeout=3600,
+        check=False,
+    )
+
+    stderr = result.stderr or ""
+
+    if result.returncode != 0:
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": "FFmpeg could not determine audio duration",
+                "path": str(path),
+                "returncode": result.returncode,
+                "stderr": stderr[-10000:],
+            },
+        )
+
+    # FFmpeg prints final progress approximately as:
+    #
+    # time=00:06:00.12
+    #
+    # Search all time= occurrences and keep the last valid one.
+    duration = None
+
+    for line in stderr.splitlines():
+        marker = "time="
+
+        if marker not in line:
+            continue
+
+        value = line.rsplit(marker, 1)[-1].strip()
+
+        # Remove anything after whitespace.
+        value = value.split()[0]
+
+        if value == "N/A":
+            continue
+
+        parts = value.split(":")
+
+        if len(parts) != 3:
+            continue
+
+        try:
+            hours = float(parts[0])
+            minutes = float(parts[1])
+            seconds = float(parts[2])
+
+            candidate = (
+                hours * 3600.0
+                + minutes * 60.0
+                + seconds
+            )
+
+            if math.isfinite(candidate) and candidate > 0:
+                duration = candidate
+
+        except ValueError:
+            continue
+
+    if duration is None:
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": "Unable to determine media duration with FFmpeg",
+                "path": str(path),
+                "ffmpeg_stderr": stderr[-20000:],
+            },
+        )
+
+    return duration
+
+
+def probe_duration_resilient(path: Path) -> float:
+    """
+    First try ffprobe metadata.
+
+    If duration is unavailable, let FFmpeg read the media
+    to EOF and determine duration from the actual stream.
+    """
+
+    try:
+        return probe_duration(path)
+
+    except HTTPException:
+        return probe_duration_with_ffmpeg(path)
+
 
 @app.post("/loop-mix")
 def loop_mix(request: LoopMixRequest):
@@ -573,9 +724,9 @@ def loop_mix(request: LoopMixRequest):
     music_path = safe_path(request.music)
     output_path = safe_path(request.output)
 
-    # --------------------------------------------------------
+    # ========================================================
     # VALIDATE INPUT
-    # --------------------------------------------------------
+    # ========================================================
 
     if not video_path.exists():
         raise HTTPException(
@@ -606,12 +757,23 @@ def loop_mix(request: LoopMixRequest):
         exist_ok=True,
     )
 
-    # --------------------------------------------------------
+    # ========================================================
     # PROBE
-    # --------------------------------------------------------
+    # ========================================================
 
+    # Video duration can normally be obtained from ffprobe.
     video_duration = probe_duration(video_path)
-    music_duration = probe_duration(music_path)
+
+    # Music duration:
+    #
+    # FFmpeg becomes the fallback source of truth.
+    #
+    # This is important for Suno WebM/Opus files where:
+    #
+    # format duration = N/A
+    # stream duration = N/A
+    #
+    music_duration = probe_duration_resilient(music_path)
 
     fps_num, fps_den = probe_fps(video_path)
 
@@ -623,9 +785,9 @@ def loop_mix(request: LoopMixRequest):
             detail="Invalid video FPS",
         )
 
-    # --------------------------------------------------------
+    # ========================================================
     # TRANSITION
-    # --------------------------------------------------------
+    # ========================================================
 
     transition_frames = request.transition_frames
 
@@ -635,27 +797,36 @@ def loop_mix(request: LoopMixRequest):
         else 0.0
     )
 
-    # Không cho transition dài hơn phần lớn source.
+    # Do not allow transition to consume too much
+    # of the source clip.
     max_transition = video_duration * 0.25
 
     if transition_duration > max_transition:
         transition_duration = max_transition
 
-    # --------------------------------------------------------
-    # CALCULATE NUMBER OF SEGMENTS
+    # ========================================================
+    # SEGMENT COUNT
     #
-    # Với crossfade:
+    # With xfade:
     #
     # total =
     #   N * video_duration
     #   - (N - 1) * transition_duration
     #
-    # --------------------------------------------------------
+    # We alternate:
+    #
+    #   0 = FORWARD
+    #   1 = REVERSE
+    #   2 = FORWARD
+    #   3 = REVERSE
+    #
+    # ========================================================
 
     if transition_duration > 0:
 
         denominator = (
-            video_duration - transition_duration
+            video_duration
+            - transition_duration
         )
 
         segment_count = max(
@@ -674,27 +845,31 @@ def loop_mix(request: LoopMixRequest):
         segment_count = max(
             1,
             math.ceil(
-                music_duration / video_duration
+                music_duration
+                / video_duration
             ),
         )
 
-    # --------------------------------------------------------
+    # ========================================================
     # BUILD INPUTS
-    #
-    # Mỗi segment đọc cùng source.
-    #
-    # Không reverse ở bản production đầu tiên.
-    # --------------------------------------------------------
+    # ========================================================
 
     command = [
         FFMPEG,
         "-hide_banner",
         "-loglevel", "error",
-
         "-y" if request.overwrite else "-n",
     ]
 
+    # One input per video segment.
+    #
+    # This allows each segment to independently be:
+    #
+    #   forward
+    #   reverse
+    #
     for _ in range(segment_count):
+
         command.extend(
             [
                 "-i",
@@ -702,7 +877,7 @@ def loop_mix(request: LoopMixRequest):
             ]
         )
 
-    # Music là input cuối.
+    # Music is the final input.
     music_input_index = segment_count
 
     command.extend(
@@ -712,36 +887,90 @@ def loop_mix(request: LoopMixRequest):
         ]
     )
 
-    # --------------------------------------------------------
+    # ========================================================
     # FILTER GRAPH
-    # --------------------------------------------------------
+    # ========================================================
 
     filters: list[str] = []
 
-    # --------------------------------------------------------
+    # ========================================================
     # VIDEO SEGMENTS
-    # --------------------------------------------------------
+    #
+    # Even index:
+    #     FORWARD
+    #
+    # Odd index:
+    #     REVERSE
+    #
+    # Example:
+    #
+    # v0 = A B C D E F G H
+    # v1 = H G F E D C B A
+    # v2 = A B C D E F G H
+    #
+    # ========================================================
 
     for index in range(segment_count):
 
-        filters.append(
-            (
-                f"[{index}:v]"
-                f"setpts=PTS-STARTPTS"
-                f"[v{index}]"
-            )
-        )
+        input_label = f"{index}:v"
 
-    # --------------------------------------------------------
-    # CROSSFADE CHAIN
-    # --------------------------------------------------------
+        if request.reverse and index % 2 == 1:
+
+            filters.append(
+                (
+                    f"[{input_label}]"
+                    f"setpts=PTS-STARTPTS,"
+                    f"reverse,"
+                    f"setpts=PTS-STARTPTS"
+                    f"[v{index}]"
+                )
+            )
+
+        else:
+
+            filters.append(
+                (
+                    f"[{input_label}]"
+                    f"setpts=PTS-STARTPTS"
+                    f"[v{index}]"
+                )
+            )
+
+    # ========================================================
+    # VIDEO TRANSITION
+    #
+    # We use dissolve between:
+    #
+    #   Forward → Reverse
+    #   Reverse → Forward
+    #
+    # With reverse enabled:
+    #
+    #   ... G H
+    #         ↓
+    #         H G ...
+    #
+    # and:
+    #
+    #   ... B A
+    #         ↓
+    #         A B ...
+    #
+    # This greatly reduces the positional jump.
+    #
+    # The dissolve intentionally introduces a small amount
+    # of ghosting instead of a hard motion discontinuity.
+    # ========================================================
 
     if segment_count == 1:
 
         filters.append(
-            "[v0]trim=duration="
-            f"{music_duration:.6f},"
-            "setpts=PTS-STARTPTS[vout]"
+            (
+                "[v0]"
+                f"trim=duration={music_duration:.6f},"
+                "setpts=PTS-STARTPTS"
+                "[vout]"
+            )
         )
 
     else:
@@ -761,16 +990,29 @@ def loop_mix(request: LoopMixRequest):
                 - transition_duration
             )
 
-            filters.append(
-                (
-                    f"[{current}][{next_label}]"
-                    f"xfade="
-                    f"transition=dissolve:"
-                    f"duration={transition_duration:.6f}:"
-                    f"offset={offset:.6f}"
-                    f"[{output_label}]"
+            if transition_duration > 0:
+
+                filters.append(
+                    (
+                        f"[{current}][{next_label}]"
+                        f"xfade="
+                        f"transition=dissolve:"
+                        f"duration={transition_duration:.6f}:"
+                        f"offset={offset:.6f}"
+                        f"[{output_label}]"
+                    )
                 )
-            )
+
+            else:
+
+                filters.append(
+                    (
+                        f"[{current}][{next_label}]"
+                        f"concat=n=2:v=1:a=0,"
+                        f"setpts=PTS-STARTPTS"
+                        f"[{output_label}]"
+                    )
+                )
 
             current = output_label
 
@@ -789,18 +1031,17 @@ def loop_mix(request: LoopMixRequest):
             )
         )
 
-    # --------------------------------------------------------
+    # ========================================================
     # AUDIO
     #
-    # Original audio:
-    #   loop indefinitely
-    #   volume 1.0
+    # ORIGINAL VIDEO AUDIO
+    #     100%
     #
-    # Music:
-    #   volume 0.5
+    # SUNO MUSIC
+    #     50%
     #
     # Music determines final duration.
-    # --------------------------------------------------------
+    # ========================================================
 
     original_audio_samples = max(
         1,
@@ -849,7 +1090,15 @@ def loop_mix(request: LoopMixRequest):
         )
     )
 
+    # ========================================================
+    # FILTER COMPLEX
+    # ========================================================
+
     filter_complex = ";".join(filters)
+
+    # ========================================================
+    # ENCODE
+    # ========================================================
 
     command.extend(
         [
@@ -893,28 +1142,79 @@ def loop_mix(request: LoopMixRequest):
         ]
     )
 
-    # --------------------------------------------------------
+    # ========================================================
     # LOG
-    # --------------------------------------------------------
+    # ========================================================
 
     print("=" * 60)
     print("LOOP MIX")
     print("=" * 60)
+
     print(f"VIDEO:              {video_path}")
     print(f"MUSIC:              {music_path}")
     print(f"OUTPUT:             {output_path}")
-    print(f"VIDEO DURATION:     {video_duration:.6f}")
-    print(f"MUSIC DURATION:     {music_duration:.6f}")
-    print(f"FPS:                {fps_num}/{fps_den}")
-    print(f"TRANSITION FRAMES:  {transition_frames}")
-    print(f"TRANSITION:         {transition_duration:.6f}s")
-    print(f"SEGMENTS:           {segment_count}")
-    print(f"REVERSE:            {request.reverse}")
+
+    print(
+        f"VIDEO DURATION:     "
+        f"{video_duration:.6f}"
+    )
+
+    print(
+        f"MUSIC DURATION:     "
+        f"{music_duration:.6f}"
+    )
+
+    print(
+        f"FPS:                "
+        f"{fps_num}/{fps_den}"
+    )
+
+    print(
+        f"TRANSITION FRAMES:  "
+        f"{transition_frames}"
+    )
+
+    print(
+        f"TRANSITION:         "
+        f"{transition_duration:.6f}s"
+    )
+
+    print(
+        f"SEGMENTS:           "
+        f"{segment_count}"
+    )
+
+    print(
+        f"REVERSE:            "
+        f"{request.reverse}"
+    )
+
+    if request.reverse:
+        print(
+            "PATTERN:            "
+            "FORWARD -> REVERSE -> FORWARD"
+        )
+    else:
+        print(
+            "PATTERN:            "
+            "FORWARD -> FORWARD -> FORWARD"
+        )
+
+    print(
+        f"ORIGINAL VOLUME:    "
+        f"{request.original_volume:.3f}"
+    )
+
+    print(
+        f"MUSIC VOLUME:       "
+        f"{request.music_volume:.3f}"
+    )
+
     print("=" * 60)
 
-    # --------------------------------------------------------
+    # ========================================================
     # EXECUTE
-    # --------------------------------------------------------
+    # ========================================================
 
     result = run_command(
         command,
@@ -922,6 +1222,7 @@ def loop_mix(request: LoopMixRequest):
     )
 
     if result.returncode != 0:
+
         raise HTTPException(
             status_code=500,
             detail={
@@ -930,17 +1231,38 @@ def loop_mix(request: LoopMixRequest):
             },
         )
 
-    # --------------------------------------------------------
+    # ========================================================
     # VALIDATE OUTPUT
-    # --------------------------------------------------------
+    # ========================================================
 
     if not output_path.exists():
+
         raise HTTPException(
             status_code=500,
-            detail="FFmpeg completed but output file was not created",
+            detail=(
+                "FFmpeg completed but "
+                "output file was not created"
+            ),
         )
 
-    output_duration = probe_duration(output_path)
+    if output_path.stat().st_size == 0:
+
+        raise HTTPException(
+            status_code=500,
+            detail="FFmpeg created an empty output file",
+        )
+
+    # ========================================================
+    # OUTPUT DURATION
+    # ========================================================
+
+    output_duration = probe_duration_resilient(
+        output_path
+    )
+
+    # ========================================================
+    # RESPONSE
+    # ========================================================
 
     return {
         "status": "ok",
@@ -958,15 +1280,30 @@ def loop_mix(request: LoopMixRequest):
             "source_duration": video_duration,
             "fps": f"{fps_num}/{fps_den}",
             "fps_float": fps,
+
             "segments": segment_count,
+
             "transition_frames": transition_frames,
             "transition_duration": transition_duration,
+
             "reverse": request.reverse,
+
+            "pattern": (
+                "forward_reverse"
+                if request.reverse
+                else "forward_only"
+            ),
         },
 
         "audio": {
-            "original_volume": request.original_volume,
-            "music_volume": request.music_volume,
+            "original_volume": (
+                request.original_volume
+            ),
+
+            "music_volume": (
+                request.music_volume
+            ),
+
             "music_duration": music_duration,
         },
 
@@ -979,6 +1316,7 @@ def loop_mix(request: LoopMixRequest):
             "video_codec": request.video_codec,
             "preset": request.preset,
             "cq": request.cq,
+
             "audio_codec": request.audio_codec,
             "audio_bitrate": request.audio_bitrate,
         },
