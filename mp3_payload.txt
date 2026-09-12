@@ -1,0 +1,427 @@
+const input = $json.output || $json;
+
+
+// ============================================================
+// 1. Validate input
+// ============================================================
+
+const run_id = String(
+  input.run_id || ''
+).trim();
+
+if (!run_id) {
+  throw new Error(
+    'run_id is missing.'
+  );
+}
+
+
+const variant = String(
+  input.variant || ''
+).trim();
+
+if (!variant) {
+  throw new Error(
+    'variant is missing.'
+  );
+}
+
+
+const mode =
+  String(
+    input.mode || ''
+  ).trim().toLowerCase() || null;
+
+
+// ============================================================
+// 2. Resolve max duration
+// ============================================================
+//
+// Normal:
+//   30 seconds
+//
+// Full:
+//   170 seconds
+//
+// Prefer explicit input.max_duration.
+// Otherwise derive from mode.
+//
+
+const max_duration = Number(
+  input.max_duration ??
+  (
+    mode === 'full'
+      ? 170
+      : 30
+  )
+);
+
+if (
+  !Number.isFinite(max_duration) ||
+  max_duration <= 0
+) {
+  throw new Error(
+    `Invalid max_duration: ${max_duration}`
+  );
+}
+
+
+// ============================================================
+// 3. Validate caption
+// ============================================================
+
+const caption = String(
+  input.caption || ''
+).trim();
+
+if (!caption) {
+  throw new Error(
+    'caption is missing.'
+  );
+}
+
+
+// ============================================================
+// 4. Validate lyrics
+// ============================================================
+
+const lyrics = String(
+  input.lyrics || ''
+).trim();
+
+if (!lyrics) {
+  throw new Error(
+    'lyrics is missing.'
+  );
+}
+
+
+// ============================================================
+// 5. Generate seed
+// ============================================================
+
+const seed =
+  Math.floor(
+    Math.random() * 4294967295
+  );
+
+
+// ============================================================
+// 6. Build ComfyUI workflow
+// ============================================================
+
+const prompt = {
+
+  // ----------------------------------------------------------
+  // Save Audio
+  // ----------------------------------------------------------
+
+  "35": {
+    "inputs": {
+      "filename_prefix":
+        `audio/${run_id}-${variant}`,
+
+      "format":
+        "flac",
+
+      "audio": [
+        "37:42",
+        0
+      ]
+    },
+
+    "class_type":
+      "SaveAudioAdvanced",
+
+    "_meta": {
+      "title":
+        "Save Audio (Advanced)"
+    }
+  },
+
+
+  // ----------------------------------------------------------
+  // Conditioning Zero Out
+  // ----------------------------------------------------------
+
+  "37:10": {
+    "inputs": {
+      "conditioning": [
+        "37:62",
+        0
+      ]
+    },
+
+    "class_type":
+      "ConditioningZeroOut",
+
+    "_meta": {
+      "title":
+        "Conditioning Zero Out"
+    }
+  },
+
+
+  // ----------------------------------------------------------
+  // Load VAE
+  // ----------------------------------------------------------
+
+  "37:7": {
+    "inputs": {
+      "vae_name":
+        "m3/minimax_music3_dav.safetensors"
+    },
+
+    "class_type":
+      "VAELoader",
+
+    "_meta": {
+      "title":
+        "Load VAE"
+    }
+  },
+
+
+  // ----------------------------------------------------------
+  // Empty MiniMax Music 3 Latent Audio
+  // ----------------------------------------------------------
+
+  "37:15": {
+    "inputs": {
+      "seconds": [
+        "37:62",
+        1
+      ],
+
+      "batch_size":
+        1
+    },
+
+    "class_type":
+      "EmptyMiniMaxMusic3LatentAudio",
+
+    "_meta": {
+      "title":
+        "Empty MiniMax Music3 Latent Audio"
+    }
+  },
+
+
+  // ----------------------------------------------------------
+  // VAE Decode Audio
+  // ----------------------------------------------------------
+
+  "37:42": {
+    "inputs": {
+      "tile_size":
+        1536,
+
+      "overlap":
+        64,
+
+      "samples": [
+        "37:9",
+        0
+      ],
+
+      "vae": [
+        "37:7",
+        0
+      ]
+    },
+
+    "class_type":
+      "VAEDecodeAudioTiled",
+
+    "_meta": {
+      "title":
+        "VAE Decode Audio (Tiled)"
+    }
+  },
+
+
+  // ----------------------------------------------------------
+  // KSampler
+  // ----------------------------------------------------------
+
+  "37:9": {
+    "inputs": {
+      "seed":
+        seed,
+
+      "steps":
+        35,
+
+      "cfg":
+        1.8,
+
+      "sampler_name":
+        "ddim",
+
+      "scheduler":
+        "linear_quadratic",
+
+      "denoise":
+        1,
+
+      "model": [
+        "37:6",
+        0
+      ],
+
+      "positive": [
+        "37:62",
+        0
+      ],
+
+      "negative": [
+        "37:10",
+        0
+      ],
+
+      "latent_image": [
+        "37:15",
+        0
+      ]
+    },
+
+    "class_type":
+      "KSampler",
+
+    "_meta": {
+      "title":
+        "KSampler"
+    }
+  },
+
+
+  // ----------------------------------------------------------
+  // Load Diffusion Model
+  // ----------------------------------------------------------
+
+  "37:6": {
+    "inputs": {
+      "unet_name":
+        "m3/minimax_music3_dit_int8_convrot.safetensors",
+
+      "weight_dtype":
+        "default"
+    },
+
+    "class_type":
+      "UNETLoader",
+
+    "_meta": {
+      "title":
+        "Load Diffusion Model"
+    }
+  },
+
+
+  // ----------------------------------------------------------
+  // MiniMax Music 3 Text Encode
+  // ----------------------------------------------------------
+
+  "37:62": {
+    "inputs": {
+      "caption":
+        caption,
+
+      "lyrics":
+        lyrics,
+
+      "seed":
+        seed,
+
+      "max_duration":
+        max_duration,
+
+      "kv_cache":
+        170,
+
+      "cfg_scale":
+        3.5,
+
+      "top_k":
+        50,
+
+      "temperature":
+        1,
+
+      "top_p":
+        1,
+
+      "acoustic_top_k":
+        50,
+
+      "acoustic_temperature":
+        0.75,
+
+      "acoustic_top_p":
+        0.95,
+
+      "clip": [
+        "37:3",
+        0
+      ]
+    },
+
+    "class_type":
+      "MiniMaxMusic3TextEncodeSamplingCUDA",
+
+    "_meta": {
+      "title":
+        "MiniMax Music3 Text Encode (Advanced Sampling)"
+    }
+  },
+
+
+  // ----------------------------------------------------------
+  // CLIP Loader
+  // ----------------------------------------------------------
+
+  "37:3": {
+    "inputs": {
+      "clip_name":
+        "m3/minimax_music3_qwen2-7B_pruned_w4a8.safetensors",
+
+      "type":
+        "minimax",
+
+      "device":
+        "default"
+    },
+
+    "class_type":
+      "CLIPLoader",
+
+    "_meta": {
+      "title":
+        "Load CLIP"
+    }
+  }
+};
+
+
+// ============================================================
+// 7. Return ComfyUI payload
+// ============================================================
+
+return [
+  {
+    json: {
+      ...input,
+
+      seed,
+
+      max_duration,
+
+      comfy_payload: {
+        prompt,
+
+        client_id:
+          `n8n-${run_id}-${variant}${mode ? `-${mode}` : ''}`
+      }
+    }
+  }
+];
