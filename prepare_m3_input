@@ -37,6 +37,96 @@ function isAbsolutePath(value) {
   );
 }
 
+function randomSeed() {
+  return Math.floor(
+    Math.random() * 4294967296
+  );
+}
+
+function resolveArtifactPath(artifact, runDir) {
+  const artifactPath =
+    cleanString(artifact?.path);
+
+  if (!artifactPath) {
+    return null;
+  }
+
+  return isAbsolutePath(artifactPath)
+    ? artifactPath
+    : joinPath(runDir, artifactPath);
+}
+
+function findLatestArtifact(artifacts, predicate) {
+  return [...artifacts]
+    .filter(predicate)
+    .sort(
+      (a, b) =>
+        Number(b.version || 0) -
+        Number(a.version || 0)
+    )[0] || null;
+}
+
+function findReferencedLyricsArtifact(
+  artifacts,
+  previewArtifact
+) {
+  const references =
+    Array.isArray(previewArtifact?.reference)
+      ? previewArtifact.reference
+      : previewArtifact?.reference
+        ? [previewArtifact.reference]
+        : [];
+
+  /*
+   * reference now contains ONLY artifact paths.
+   *
+   * Example:
+   *
+   * [
+   *   "/data/productions/run_xxx/run_xxx.lyrics.002.txt"
+   * ]
+   */
+
+  for (const reference of references) {
+    const referencePath =
+      cleanString(reference);
+
+    if (!referencePath) {
+      continue;
+    }
+
+    const matched =
+      artifacts.find(artifact => {
+        if (
+          !artifact ||
+          artifact.name !== 'lyrics'
+        ) {
+          return false;
+        }
+
+        const artifactPath =
+          cleanString(artifact.path);
+
+        const artifactFilename =
+          cleanString(artifact.filename);
+
+        return (
+          artifactPath === referencePath ||
+          artifactFilename === referencePath ||
+          referencePath.endsWith(
+            `/${artifactFilename}`
+          )
+        );
+      });
+
+    if (matched) {
+      return matched;
+    }
+  }
+
+  return null;
+}
+
 // ============================================================
 // Resolve action
 // ============================================================
@@ -140,10 +230,7 @@ if (
 }
 
 // ============================================================
-// Resolve artifact_version
-//
-// For generate_music callback:
-// artifact_version = lyrics source version.
+// Resolve callback artifact_version
 // ============================================================
 
 const artifactVersionRaw =
@@ -157,7 +244,8 @@ if (
   artifactVersionRaw !== null &&
   cleanString(artifactVersionRaw) !== ''
 ) {
-  const value = cleanString(artifactVersionRaw);
+  const value =
+    cleanString(artifactVersionRaw);
 
   if (!/^\d+$/.test(value)) {
     throw new Error(
@@ -178,12 +266,7 @@ if (
 }
 
 // ============================================================
-// Resolve Telegram callback caption
-//
-// IMPORTANT:
-// For callback_query:
-//
-// raw_callback_query.message.caption
+// Telegram callback caption
 // ============================================================
 
 const callback_caption = cleanString(
@@ -198,18 +281,10 @@ const callback_caption = cleanString(
 );
 
 // ============================================================
-// Extract music_template_filename from caption
+// Extract template filename from Telegram caption
 //
-// Current caption:
-//
-// cinematic-ballad-ethereal-world-music_0001.txt
-//
-// Architect of the Bloom
-//
-// [Intro]
-// ...
-//
-// First non-empty line = template filename.
+// Used only as a fallback / diagnostic.
+// FULL generation gets template from preview artifact.
 // ============================================================
 
 let callback_music_template_filename = null;
@@ -221,13 +296,10 @@ if (callback_caption) {
     .find(Boolean);
 
   if (firstLine) {
-    callback_music_template_filename = firstLine;
+    callback_music_template_filename =
+      firstLine;
   }
 }
-
-// ============================================================
-// Validate callback template filename
-// ============================================================
 
 if (callback_music_template_filename) {
   if (
@@ -243,12 +315,6 @@ if (callback_music_template_filename) {
 
 // ============================================================
 // Production paths
-//
-// Run-specific artifacts:
-// /data/productions/{run_id}
-//
-// Shared themes:
-// /data/productions/themes/{variant}
 // ============================================================
 
 const productionRoot =
@@ -304,16 +370,108 @@ if (
   );
 }
 
+const artifacts =
+  manifest.artifacts;
+
+// ============================================================
+// Find preview artifact for FULL
+//
+// FULL does NOT generate a new seed/template.
+//
+// It inherits both from the preview artifact.
+// ============================================================
+
+let previewArtifact = null;
+
+if (
+  action === 'generate_music' &&
+  mode === 'full'
+) {
+  const previewArtifacts =
+    artifacts.filter(artifact =>
+      artifact &&
+      artifact.name === 'audio' &&
+      artifact.variant === variant &&
+      artifact.mode === 'preview' &&
+      artifact.path
+    );
+
+  /*
+   * Prefer the preview whose template matches
+   * the template shown by Telegram.
+   *
+   * This protects against selecting an unrelated
+   * preview when multiple previews exist.
+   */
+
+  if (callback_music_template_filename) {
+    previewArtifact =
+      findLatestArtifact(
+        previewArtifacts,
+        artifact =>
+          artifact.template_filename ===
+          callback_music_template_filename
+      );
+  }
+
+  /*
+   * If no exact template match is found,
+   * use the latest preview for this variant.
+   */
+
+  if (!previewArtifact) {
+    previewArtifact =
+      findLatestArtifact(
+        previewArtifacts,
+        () => true
+      );
+  }
+
+  if (!previewArtifact) {
+    throw new Error(
+      `Prepare Minimax Music 3: no preview audio artifact found for full generation, variant "${variant}".`
+    );
+  }
+
+  if (
+    previewArtifact.seed === undefined ||
+    previewArtifact.seed === null
+  ) {
+    throw new Error(
+      `Prepare Minimax Music 3: preview audio artifact has no seed: ${previewArtifact.path}`
+    );
+  }
+
+  if (
+    !Number.isInteger(
+      Number(previewArtifact.seed)
+    )
+  ) {
+    throw new Error(
+      `Prepare Minimax Music 3: invalid preview seed: ${previewArtifact.seed}`
+    );
+  }
+
+  if (
+    !cleanString(
+      previewArtifact.template_filename
+    )
+  ) {
+    throw new Error(
+      `Prepare Minimax Music 3: preview audio artifact has no template_filename: ${previewArtifact.path}`
+    );
+  }
+}
+
 // ============================================================
 // Find lyrics artifacts
 //
-// IMPORTANT:
-// Do NOT filter lyrics by variant.
 // Lyrics are run-level artifacts.
+// Do NOT filter by music variant.
 // ============================================================
 
 const lyricsArtifacts =
-  manifest.artifacts.filter(
+  artifacts.filter(
     artifact =>
       artifact &&
       artifact.name === 'lyrics' &&
@@ -332,29 +490,58 @@ if (!lyricsArtifacts.length) {
 
 let lyricsArtifact = null;
 
-if (artifact_version !== null) {
+/*
+ * FULL:
+ *
+ * Use the lyrics referenced by the preview artifact.
+ *
+ * This is the important lineage rule.
+ */
+
+if (
+  previewArtifact
+) {
   lyricsArtifact =
-    lyricsArtifacts.find(
-      artifact =>
-        Number(artifact.version) ===
-        artifact_version
-    ) || null;
+    findReferencedLyricsArtifact(
+      artifacts,
+      previewArtifact
+    );
 
   if (!lyricsArtifact) {
     throw new Error(
-      `Prepare Minimax Music 3: lyrics artifact version ${artifact_version} not found for run_id ${run_id}.`
+      `Prepare Minimax Music 3: preview artifact does not reference a valid lyrics artifact: ${previewArtifact.path}`
     );
   }
-} else {
-  const sortedLyricsArtifacts =
-    [...lyricsArtifacts].sort(
-      (a, b) =>
-        Number(b.version || 0) -
-        Number(a.version || 0)
-    );
+}
 
-  lyricsArtifact =
-    sortedLyricsArtifacts[0];
+/*
+ * Other modes:
+ *
+ * artifact_version explicitly selects lyrics.
+ * Otherwise latest lyrics.
+ */
+
+if (!lyricsArtifact) {
+  if (artifact_version !== null) {
+    lyricsArtifact =
+      lyricsArtifacts.find(
+        artifact =>
+          Number(artifact.version) ===
+          artifact_version
+      ) || null;
+
+    if (!lyricsArtifact) {
+      throw new Error(
+        `Prepare Minimax Music 3: lyrics artifact version ${artifact_version} not found for run_id ${run_id}.`
+      );
+    }
+  } else {
+    lyricsArtifact =
+      findLatestArtifact(
+        lyricsArtifacts,
+        () => true
+      );
+  }
 }
 
 // ============================================================
@@ -377,26 +564,17 @@ if (
 // Resolve lyrics path
 // ============================================================
 
-const lyricsArtifactPath =
-  cleanString(lyricsArtifact.path);
+const lyricsPath =
+  resolveArtifactPath(
+    lyricsArtifact,
+    runDir
+  );
 
-if (!lyricsArtifactPath) {
+if (!lyricsPath) {
   throw new Error(
     'Prepare Minimax Music 3: lyrics artifact has no path.'
   );
 }
-
-const lyricsPath =
-  isAbsolutePath(lyricsArtifactPath)
-    ? lyricsArtifactPath
-    : joinPath(
-        runDir,
-        lyricsArtifactPath
-      );
-
-// ============================================================
-// Read official lyrics
-// ============================================================
 
 if (!fs.existsSync(lyricsPath)) {
   throw new Error(
@@ -404,15 +582,20 @@ if (!fs.existsSync(lyricsPath)) {
   );
 }
 
+// ============================================================
+// Read official lyrics
+// ============================================================
+
 let lyrics;
 
 try {
-  lyrics = fs
-    .readFileSync(
-      lyricsPath,
-      'utf8'
-    )
-    .trim();
+  lyrics =
+    fs
+      .readFileSync(
+        lyricsPath,
+        'utf8'
+      )
+      .trim();
 } catch (error) {
   throw new Error(
     `Prepare Minimax Music 3: failed to read lyrics ${lyricsPath}: ${error.message}`
@@ -427,13 +610,6 @@ if (!lyrics) {
 
 // ============================================================
 // Extract title
-//
-// Expected:
-//
-// Architect of the Bloom
-//
-// [Intro]
-// ...
 // ============================================================
 
 const lyricParts =
@@ -452,10 +628,6 @@ if (!title) {
 
 // ============================================================
 // Shared themes directory
-//
-// /data/productions/themes/00
-// /data/productions/themes/01
-// /data/productions/themes/02
 // ============================================================
 
 const themesRoot =
@@ -508,70 +680,70 @@ if (!templateFiles.length) {
 }
 
 // ============================================================
-// Select music template
+// Resolve template + seed
 //
-// RULES:
+// FULL:
+//   template = preview artifact
+//   seed     = preview artifact
 //
-// 1. regenerate_music
-//    -> ALWAYS RANDOM
+// REGENERATE:
+//   template = random
+//   seed     = random
 //
-// 2. generate_music + callback
-//    -> KEEP TEMPLATE FROM TELEGRAM CAPTION
-//
-// 3. generate_music without callback
-//    -> RANDOM
+// PREVIEW:
+//   template = random
+//   seed     = random
 // ============================================================
 
 let music_template_filename;
+let seed;
 
-if (action === 'regenerate_music') {
-
-  // ----------------------------------------------------------
-  // REGENERATE
-  // Always choose a NEW random template.
-  // ----------------------------------------------------------
-
-  const randomIndex =
-    Math.floor(
-      Math.random() *
-      templateFiles.length
-    );
+if (
+  action === 'generate_music' &&
+  mode === 'full'
+) {
+  /*
+   * ----------------------------------------------------------
+   * FULL FROM PREVIEW
+   * ----------------------------------------------------------
+   */
 
   music_template_filename =
-    templateFiles[randomIndex];
-
-} else if (
-  action === 'generate_music' &&
-  callback_music_template_filename
-) {
-
-  // ----------------------------------------------------------
-  // GENERATE FULL FROM CALLBACK
-  // Keep the exact template shown in Telegram.
-  // ----------------------------------------------------------
-
-  const matchedTemplate =
-    templateFiles.find(
-      filename =>
-        filename ===
-        callback_music_template_filename
+    cleanString(
+      previewArtifact.template_filename
     );
 
-  if (!matchedTemplate) {
+  seed =
+    Number(
+      previewArtifact.seed
+    );
+
+  if (
+    !templateFiles.includes(
+      music_template_filename
+    )
+  ) {
     throw new Error(
-      `Prepare Minimax Music 3: callback music template not found in ${themesDir}: ${callback_music_template_filename}`
+      `Prepare Minimax Music 3: preview template not found in ${themesDir}: ${music_template_filename}`
     );
   }
 
-  music_template_filename =
-    matchedTemplate;
+  if (
+    !Number.isInteger(seed) ||
+    seed < 0 ||
+    seed > 4294967295
+  ) {
+    throw new Error(
+      `Prepare Minimax Music 3: invalid preview seed "${seed}".`
+    );
+  }
 
 } else {
-
-  // ----------------------------------------------------------
-  // NEW GENERATION
-  // No callback template -> random.
-  // ----------------------------------------------------------
+  /*
+   * ----------------------------------------------------------
+   * NEW / REGENERATE
+   * ----------------------------------------------------------
+   */
 
   const randomIndex =
     Math.floor(
@@ -581,6 +753,9 @@ if (action === 'regenerate_music') {
 
   music_template_filename =
     templateFiles[randomIndex];
+
+  seed =
+    randomSeed();
 }
 
 // ============================================================
@@ -633,8 +808,9 @@ let callback_music_template_status =
   'no_telegram_caption';
 
 if (callback_caption) {
-  if (callback_music_template_filename) {
-
+  if (
+    callback_music_template_filename
+  ) {
     if (
       callback_music_template_filename ===
       music_template_filename
@@ -646,11 +822,16 @@ if (callback_caption) {
     ) {
       callback_music_template_status =
         'regenerate_random';
+    } else if (
+      action === 'generate_music' &&
+      mode === 'full'
+    ) {
+      callback_music_template_status =
+        'preview_artifact';
     } else {
       callback_music_template_status =
         'mismatch';
     }
-
   } else {
     callback_music_template_status =
       'no_template_filename';
@@ -671,11 +852,8 @@ return [
       // ------------------------------------------------------
 
       action,
-
       run_id,
-
       variant,
-
       mode,
 
       // ------------------------------------------------------
@@ -683,6 +861,7 @@ return [
       // ------------------------------------------------------
 
       max_duration,
+      seed,
 
       // ------------------------------------------------------
       // Lyrics
@@ -717,6 +896,26 @@ return [
       music_template_filename,
 
       music_template_path,
+
+      // ------------------------------------------------------
+      // Preview lineage
+      // ------------------------------------------------------
+
+      preview_artifact_path:
+        previewArtifact?.path ||
+        null,
+
+      preview_artifact_version:
+        previewArtifact?.version ||
+        null,
+
+      preview_seed:
+        previewArtifact?.seed ??
+        null,
+
+      preview_template_filename:
+        previewArtifact?.template_filename ||
+        null,
 
       // ------------------------------------------------------
       // Callback diagnostics
