@@ -1,0 +1,558 @@
+const input = $json.output || $json;
+
+
+// ============================================================
+// 1. Validate input
+// ============================================================
+
+const run_id = String(
+  input.run_id || ''
+).trim();
+
+if (!run_id) {
+  throw new Error('run_id is missing.');
+}
+
+const image_prompt = String(
+  input.image_prompt || ''
+).trim();
+
+if (!image_prompt) {
+  throw new Error('image_prompt is missing.');
+}
+
+
+// ============================================================
+// 2. Resolve image version
+// ============================================================
+//
+// Priority:
+//   image_version
+//   next_image_version
+//   default = 1
+//
+// Filename used by ComfyUI is temporary.
+// Canonical artifact naming is handled later by
+// Save & Register Artifact.
+//
+
+const version = Number(
+  input.image_version ??
+  input.next_image_version ??
+  1
+);
+
+if (
+  !Number.isInteger(version) ||
+  version < 1
+) {
+  throw new Error(
+    `Invalid image version: ${version}`
+  );
+}
+
+const paddedVersion =
+  String(version).padStart(3, '0');
+
+
+// ============================================================
+// 3. Generate seed
+// ============================================================
+
+const seed =
+  Math.floor(
+    Math.random() * 4294967295
+  );
+
+
+// ============================================================
+// 4. Build ComfyUI workflow
+// ============================================================
+
+const prompt = {
+
+  // ----------------------------------------------------------
+  // Save Image
+  // ----------------------------------------------------------
+
+  "29": {
+    "inputs": {
+      "filename_prefix":
+        `image/${run_id}-v${paddedVersion}`,
+
+      "images": [
+        "30:295",
+        0
+      ]
+    },
+    "class_type": "SaveImage"
+  },
+
+
+  // ----------------------------------------------------------
+  // Image prompt
+  // ----------------------------------------------------------
+
+  "59": {
+    "inputs": {
+      "value":
+        image_prompt
+    },
+    "class_type":
+      "PrimitiveStringMultiline"
+  },
+
+
+  // ----------------------------------------------------------
+  // Prompt formatting
+  // ----------------------------------------------------------
+
+  "150": {
+    "inputs": {
+      "f_string":
+        "{a}\n\n{b}",
+
+      "values.a": [
+        "153",
+        2
+      ],
+
+      "values.b": [
+        "59",
+        0
+      ]
+    },
+    "class_type":
+      "StringFormat"
+  },
+
+
+  // ----------------------------------------------------------
+  // LoRA Manager
+  // ----------------------------------------------------------
+
+  "153": {
+    "inputs": {
+      "text": "",
+
+      "loras": {
+        "__value__": []
+      },
+
+      "model": [
+        "292",
+        0
+      ],
+
+      "clip": [
+        "292",
+        1
+      ]
+    },
+    "class_type":
+      "Lora Loader (LoraManager)"
+  },
+
+
+  // ----------------------------------------------------------
+  // Resolution
+  // ----------------------------------------------------------
+
+  "288": {
+    "inputs": {
+      "ResolutionState":
+        "{\"mode\":\"custom_ratio\",\"ratio\":\"4:3\",\"w\":1536,\"h\":1152,\"custom_w\":576,\"custom_h\":960,\"custom_ratio_w\":4,\"custom_ratio_h\":3,\"snap\":8}"
+    },
+    "class_type":
+      "PixaromaResolution"
+  },
+
+
+  // ----------------------------------------------------------
+  // Krea 2 model + CLIP
+  // ----------------------------------------------------------
+
+  "292": {
+    "inputs": {
+      "model": [
+        "30:283",
+        0
+      ],
+
+      "clip": [
+        "30:293",
+        0
+      ],
+
+      "LoraLoaderState":
+        "{\"version\":1,\"sep\":\", \",\"cacheMode\":\"last\",\"loras\":[{\"name\":\"krea2/Krea2_TextFusion_Refusal_Reduction.safetensors\",\"on\":true,\"sm\":1,\"sc\":1,\"triggers\":[]},{\"name\":\"krea2/(Krea 2) 8-Step Turbo Distill Rank 256 V2026.1.safetensors\",\"on\":false,\"sm\":1,\"sc\":1,\"triggers\":[]}]}"
+    },
+    "class_type":
+      "PixaromaLoraLoader"
+  },
+
+
+  // ----------------------------------------------------------
+  // Empty latent
+  // ----------------------------------------------------------
+
+  "30:5": {
+    "inputs": {
+      "width": [
+        "288",
+        0
+      ],
+
+      "height": [
+        "288",
+        1
+      ],
+
+      "batch_size": 1
+    },
+    "class_type":
+      "EmptyLatentImage"
+  },
+
+
+  // ----------------------------------------------------------
+  // Positive prompt
+  // ----------------------------------------------------------
+
+  "30:6": {
+    "inputs": {
+      "text": [
+        "150",
+        0
+      ],
+
+      "clip": [
+        "153",
+        1
+      ]
+    },
+    "class_type":
+      "CLIPTextEncode"
+  },
+
+
+  // ----------------------------------------------------------
+  // VAE
+  // ----------------------------------------------------------
+
+  "30:12": {
+    "inputs": {
+      "vae_name":
+        "wan/Wan2.1_VAE_upscale2x_imageonly_real_v1_fp8.safetensors"
+    },
+    "class_type":
+      "VAELoader"
+  },
+
+
+  // ----------------------------------------------------------
+  // Negative conditioning
+  // ----------------------------------------------------------
+
+  "30:13": {
+    "inputs": {
+      "conditioning": [
+        "30:6",
+        0
+      ]
+    },
+    "class_type":
+      "ConditioningZeroOut"
+  },
+
+
+  // ----------------------------------------------------------
+  // First sampler
+  // ----------------------------------------------------------
+
+  "30:53": {
+    "inputs": {
+      "eta": 0.5,
+      "sampler_name":
+        "linear/euler",
+      "scheduler":
+        "beta",
+      "steps": 8,
+      "steps_to_run": 8,
+      "denoise": 1,
+      "cfg": 1,
+      "seed": seed,
+      "sampler_mode":
+        "standard",
+      "bongmath": false,
+
+      "model": [
+        "153",
+        0
+      ],
+
+      "positive": [
+        "30:6",
+        0
+      ],
+
+      "negative": [
+        "30:13",
+        0
+      ],
+
+      "latent_image": [
+        "30:5",
+        0
+      ]
+    },
+    "class_type":
+      "ClownsharKSampler_Beta"
+  },
+
+
+  // ----------------------------------------------------------
+  // Second sampler
+  // ----------------------------------------------------------
+
+  "30:135": {
+    "inputs": {
+      "eta": 0.5,
+      "sampler_name":
+        "linear/rk4_4s",
+      "scheduler":
+        "simple",
+      "steps": 8,
+      "steps_to_run": -1,
+      "denoise": 0.3,
+      "cfg": 1,
+      "seed": seed,
+      "sampler_mode":
+        "resample",
+      "bongmath": false,
+
+      "model": [
+        "30:179",
+        0
+      ],
+
+      "positive": [
+        "30:6",
+        0
+      ],
+
+      "negative": [
+        "30:13",
+        0
+      ],
+
+      "latent_image": [
+        "30:53",
+        0
+      ]
+    },
+    "class_type":
+      "ClownsharKSampler_Beta"
+  },
+
+
+  // ----------------------------------------------------------
+  // VAE decode
+  // ----------------------------------------------------------
+
+  "30:140": {
+    "inputs": {
+      "upscale": 2,
+      "tile": false,
+      "tile_size": 512,
+      "overlap": 64,
+      "temporal_size": 4096,
+      "temporal_overlap": 64,
+
+      "samples": [
+        "30:135",
+        0
+      ],
+
+      "vae": [
+        "30:12",
+        0
+      ]
+    },
+    "class_type":
+      "VAEUtils_VAEDecodeTiled"
+  },
+
+
+  // ----------------------------------------------------------
+  // Model switch
+  // ----------------------------------------------------------
+
+  "30:179": {
+    "inputs": {
+      "switch": false,
+
+      "on_false": [
+        "153",
+        0
+      ],
+
+      "on_true": [
+        "30:297",
+        0
+      ]
+    },
+    "class_type":
+      "ComfySwitchNode"
+  },
+
+
+  // ----------------------------------------------------------
+  // Upscale model
+  // ----------------------------------------------------------
+
+  "30:250": {
+    "inputs": {
+      "model_name":
+        "realesrganX4plus_v50.safetensors"
+    },
+    "class_type":
+      "UpscaleModelLoader"
+  },
+
+
+  // ----------------------------------------------------------
+  // Krea 2 UNET
+  // ----------------------------------------------------------
+
+  "30:283": {
+    "inputs": {
+      "unet_name":
+        "krea/NVFP4_krea2TurboOfficialComfy.safetensors",
+
+      "weight_dtype":
+        "default"
+    },
+    "class_type":
+      "UNETLoader"
+  },
+
+
+  // ----------------------------------------------------------
+  // Krea 2 CLIP
+  // ----------------------------------------------------------
+
+  "30:293": {
+    "inputs": {
+      "clip_name":
+        "qwen/qwen3-vl-4b-heretic_int8_dynamic_convrot.safetensors",
+
+      "type":
+        "krea2",
+
+      "device":
+        "default"
+    },
+    "class_type":
+      "CLIPLoader"
+  },
+
+
+  // ----------------------------------------------------------
+  // Upscale
+  // ----------------------------------------------------------
+
+  "30:294": {
+    "inputs": {
+      "upscale_model": [
+        "30:250",
+        0
+      ],
+
+      "image": [
+        "30:140",
+        0
+      ]
+    },
+    "class_type":
+      "ImageUpscaleWithModel"
+  },
+
+
+  // ----------------------------------------------------------
+  // Final image scaling
+  // ----------------------------------------------------------
+
+  "30:295": {
+    "inputs": {
+      "upscale_method":
+        "area",
+
+      "width": [
+        "288",
+        0
+      ],
+
+      "height": [
+        "288",
+        1
+      ],
+
+      "crop":
+        "disabled",
+
+      "image": [
+        "30:294",
+        0
+      ]
+    },
+    "class_type":
+      "ImageScale"
+  },
+
+
+  // ----------------------------------------------------------
+  // Optional model-only LoRA
+  // ----------------------------------------------------------
+
+  "30:297": {
+    "inputs": {
+      "lora_name":
+        "krea2/Krea2_TextFusion_Refusal_Reduction.safetensors",
+
+      "strength_model": 1,
+
+      "model": [
+        "30:283",
+        0
+      ]
+    },
+    "class_type":
+      "LoraLoaderModelOnly"
+  }
+};
+
+
+// ============================================================
+// 5. Return ComfyUI payload
+// ============================================================
+
+return [
+  {
+    json: {
+      ...input,
+
+      seed,
+
+      image_version:
+        version,
+
+      comfy_payload: {
+        prompt,
+
+        client_id:
+          `n8n-${run_id}-${paddedVersion}`
+      }
+    }
+  }
+];
