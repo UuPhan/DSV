@@ -1,0 +1,595 @@
+const fs = require('fs');
+
+const items = $input.all();
+
+function cleanString(value) {
+  return String(value ?? '').trim();
+}
+
+function nullableString(value) {
+  const s = cleanString(value);
+  return s || null;
+}
+
+function nullableInteger(value) {
+  if (value === null || value === undefined || value === '') {
+    return null;
+  }
+
+  const n = Number(value);
+
+  if (!Number.isInteger(n)) {
+    return null;
+  }
+
+  return n;
+}
+
+function safePart(value, fallback = null) {
+  const s = cleanString(value);
+
+  if (!s) {
+    return fallback;
+  }
+
+  return s.replace(/[^a-zA-Z0-9._-]/g, '_');
+}
+
+function joinPath(...parts) {
+  return parts
+    .map((part, index) => {
+      const value = String(part ?? '');
+
+      if (index === 0) {
+        return value.replace(/\/+$/, '');
+      }
+
+      return value.replace(/^\/+|\/+$/g, '');
+    })
+    .filter(Boolean)
+    .join('/');
+}
+
+function ensureDir(dir) {
+  fs.mkdirSync(dir, {
+    recursive: true,
+  });
+}
+
+function readJsonFile(filePath, fallback) {
+  if (!fs.existsSync(filePath)) {
+    return fallback;
+  }
+
+  try {
+    const raw = fs.readFileSync(filePath, 'utf8');
+
+    if (!raw.trim()) {
+      return fallback;
+    }
+
+    return JSON.parse(raw);
+  } catch (error) {
+    throw new Error(
+      `Cannot read JSON file "${filePath}": ${error.message}`
+    );
+  }
+}
+
+function writeJsonFile(filePath, data) {
+  fs.writeFileSync(
+    filePath,
+    JSON.stringify(data, null, 2),
+    'utf8'
+  );
+}
+
+function normalizeReference(value) {
+  if (value === null || value === undefined) {
+    return null;
+  }
+
+  const values = Array.isArray(value)
+    ? value
+    : [value];
+
+  const paths = values
+    .map(value => {
+      if (typeof value === 'string') {
+        return cleanString(value);
+      }
+
+      if (
+        value &&
+        typeof value === 'object' &&
+        typeof value.path === 'string'
+      ) {
+        return cleanString(value.path);
+      }
+
+      return '';
+    })
+    .filter(Boolean);
+
+  return paths.length ? paths : null;
+}
+
+function getBinaryExtension(binaryData, mimeType) {
+  const fileName = cleanString(binaryData?.fileName);
+
+  if (fileName) {
+    const match = fileName.match(/\.([a-zA-Z0-9]+)$/);
+
+    if (match) {
+      return match[1].toLowerCase();
+    }
+  }
+
+  const mimeMap = {
+    'audio/flac': 'flac',
+    'audio/mpeg': 'mp3',
+    'audio/mp3': 'mp3',
+    'audio/wav': 'wav',
+    'audio/x-wav': 'wav',
+    'audio/ogg': 'ogg',
+    'audio/mp4': 'm4a',
+    'video/mp4': 'mp4',
+    'image/png': 'png',
+    'image/jpeg': 'jpg',
+    'image/webp': 'webp',
+    'text/plain': 'txt',
+    'application/json': 'json',
+  };
+
+  return mimeMap[mimeType] || 'bin';
+}
+
+function resolveBinaryData(item) {
+  const binary = item.binary || {};
+
+  const preferredFields = [
+    'data',
+    'audio',
+    'image',
+    'video',
+    'file',
+  ];
+
+  for (const field of preferredFields) {
+    if (binary[field]) {
+      return {
+        field,
+        data: binary[field],
+      };
+    }
+  }
+
+  const firstField = Object.keys(binary)[0];
+
+  if (firstField) {
+    return {
+      field: firstField,
+      data: binary[firstField],
+    };
+  }
+
+  return null;
+}
+
+const output = [];
+
+for (const item of items) {
+  const input = item.json || {};
+
+  const run_id = cleanString(
+    input.run_id ||
+    input.output?.run_id
+  );
+
+  if (!run_id) {
+    throw new Error(
+      'Save Artifact: missing run_id'
+    );
+  }
+
+  const productionRoot = cleanString(
+    input.production_root ||
+    input.run_root ||
+    '/data/productions'
+  );
+
+  const runDir = joinPath(
+    productionRoot,
+    run_id
+  );
+
+  ensureDir(runDir);
+
+  const artifact_name = safePart(
+    input.artifact_name ||
+    input.name
+  );
+
+  if (!artifact_name) {
+    throw new Error(
+      'Save Artifact: missing artifact_name'
+    );
+  }
+
+  const variantRaw =
+    input.variant ??
+    input.output?.variant ??
+    null;
+
+  const variant =
+    cleanString(variantRaw) || null;
+
+  const modeRaw =
+    input.mode ??
+    input.output?.mode ??
+    null;
+
+  const mode =
+    cleanString(modeRaw).toLowerCase() || null;
+
+  /*
+   * ------------------------------------------------------------
+   * Reference
+   * ------------------------------------------------------------
+   *
+   * reference is ONLY an array of artifact file paths.
+   *
+   * Example:
+   *
+   * reference: [
+   *   "/data/productions/run_xxx/run_xxx.styles.json",
+   *   "/data/productions/run_xxx/run_xxx.lyrics.002.txt"
+   * ]
+   */
+
+  const reference = normalizeReference(
+    input.reference ||
+    input.references ||
+    input.output?.reference ||
+    input.output?.references
+  );
+
+  /*
+   * ------------------------------------------------------------
+   * Audio metadata
+   * ------------------------------------------------------------
+   */
+
+  let template_filename = null;
+  let seed = null;
+
+  if (artifact_name === 'audio') {
+    template_filename = nullableString(
+      input.music_template_filename ||
+      input.template_filename ||
+      input.output?.music_template_filename ||
+      input.output?.template_filename
+    );
+
+    seed = nullableInteger(
+      input.seed ??
+      input.output?.seed
+    );
+
+    if (
+      seed !== null &&
+      (
+        seed < 0 ||
+        seed > 4294967295
+      )
+    ) {
+      throw new Error(
+        `Save Artifact: invalid audio seed "${seed}"`
+      );
+    }
+  }
+
+  /*
+   * ------------------------------------------------------------
+   * Manifest
+   * ------------------------------------------------------------
+   */
+
+  const manifestPath = joinPath(
+    runDir,
+    `${run_id}.artifacts.json`
+  );
+
+  const manifest = readJsonFile(
+    manifestPath,
+    {
+      run_id,
+      artifacts: [],
+    }
+  );
+
+  if (!Array.isArray(manifest.artifacts)) {
+    manifest.artifacts = [];
+  }
+
+  /*
+   * ------------------------------------------------------------
+   * Version
+   * ------------------------------------------------------------
+   *
+   * Version scope:
+   *
+   *   name + variant + mode
+   *
+   * Therefore:
+   *
+   * audio / 00 / preview
+   * audio / 00 / full
+   *
+   * have independent version sequences.
+   */
+
+  const scopedArtifacts =
+    manifest.artifacts.filter(artifact => {
+      if (!artifact) {
+        return false;
+      }
+
+      return (
+        artifact.name === artifact_name &&
+        (artifact.variant ?? null) === variant &&
+        (artifact.mode ?? null) === mode
+      );
+    });
+
+  const version =
+    scopedArtifacts.reduce(
+      (max, artifact) => {
+        const current = Number(
+          artifact.version
+        );
+
+        return Number.isInteger(current)
+          ? Math.max(max, current)
+          : max;
+      },
+      0
+    ) + 1;
+
+  const versionTag =
+    String(version).padStart(3, '0');
+
+  /*
+   * ------------------------------------------------------------
+   * Binary
+   * ------------------------------------------------------------
+   */
+
+  const binaryInfo =
+    resolveBinaryData(item);
+
+  let filename;
+  let filePath = null;
+  let mime_type = null;
+  let size_bytes = null;
+
+  if (binaryInfo) {
+    const binaryData =
+      binaryInfo.data;
+
+    mime_type =
+      cleanString(
+        binaryData.mimeType
+      ) || null;
+
+    const extension =
+      getBinaryExtension(
+        binaryData,
+        mime_type
+      );
+
+    const variantPart =
+      variant
+        ? `.${safePart(variant)}`
+        : '';
+
+    filename =
+      `${run_id}.${artifact_name}` +
+      `${variantPart}.${versionTag}.${extension}`;
+
+    filePath = joinPath(
+      runDir,
+      filename
+    );
+
+    if (!binaryData.data) {
+      throw new Error(
+        `Save Artifact: binary field "${binaryInfo.field}" has no data`
+      );
+    }
+
+    const buffer =
+      Buffer.from(
+        binaryData.data,
+        'base64'
+      );
+
+    fs.writeFileSync(
+      filePath,
+      buffer
+    );
+
+    size_bytes = buffer.length;
+  } else {
+    /*
+     * ----------------------------------------------------------
+     * Non-binary artifact
+     * ----------------------------------------------------------
+     *
+     * Text / JSON artifacts can be supplied through:
+     *
+     *   artifact_content
+     *   content
+     *   output.artifact_content
+     *
+     */
+
+    const content =
+      input.artifact_content ??
+      input.content ??
+      input.output?.artifact_content ??
+      input.output?.content ??
+      null;
+
+    if (content !== null) {
+      let extension = 'txt';
+
+      if (
+        artifact_name === 'styles' ||
+        artifact_name === 'manifest'
+      ) {
+        extension = 'json';
+      }
+
+      const variantPart =
+        variant
+          ? `.${safePart(variant)}`
+          : '';
+
+      filename =
+        `${run_id}.${artifact_name}` +
+        `${variantPart}.${versionTag}.${extension}`;
+
+      filePath = joinPath(
+        runDir,
+        filename
+      );
+
+      let text;
+
+      if (
+        typeof content === 'object'
+      ) {
+        text =
+          JSON.stringify(
+            content,
+            null,
+            2
+          );
+      } else {
+        text = String(content);
+      }
+
+      fs.writeFileSync(
+        filePath,
+        text,
+        'utf8'
+      );
+
+      size_bytes =
+        Buffer.byteLength(
+          text,
+          'utf8'
+        );
+
+      mime_type =
+        extension === 'json'
+          ? 'application/json'
+          : 'text/plain';
+    } else {
+      throw new Error(
+        'Save Artifact: no binary data or artifact content found'
+      );
+    }
+  }
+
+  /*
+   * ------------------------------------------------------------
+   * Artifact record
+   * ------------------------------------------------------------
+   */
+
+  const artifact = {
+    name: artifact_name,
+    variant,
+    mode,
+    version,
+    filename,
+    path: filePath,
+    mime_type,
+    size_bytes,
+    created_at:
+      new Date().toISOString(),
+  };
+
+  if (reference) {
+    artifact.reference = reference;
+  }
+
+  if (artifact_name === 'audio') {
+    if (template_filename) {
+      artifact.template_filename =
+        template_filename;
+    }
+
+    if (seed !== null) {
+      artifact.seed = seed;
+    }
+  }
+
+  /*
+   * ------------------------------------------------------------
+   * Update manifest
+   * ------------------------------------------------------------
+   */
+
+  manifest.artifacts.push(
+    artifact
+  );
+
+  manifest.updated_at =
+    new Date().toISOString();
+
+  writeJsonFile(
+    manifestPath,
+    manifest
+  );
+
+  /*
+   * ------------------------------------------------------------
+   * Output
+   * ------------------------------------------------------------
+   */
+
+  output.push({
+    json: {
+      ...input,
+
+      run_id,
+      production_root:
+        productionRoot,
+      run_dir:
+        runDir,
+
+      artifact,
+      artifact_name,
+      variant,
+      mode,
+      version,
+
+      reference:
+        reference || null,
+
+      manifest_path:
+        manifestPath,
+
+      artifacts:
+        manifest.artifacts,
+    },
+
+    binary:
+      item.binary || undefined,
+  });
+}
+
+return output;
