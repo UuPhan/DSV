@@ -1,0 +1,117 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "const x = $json;\n\n// ============================================================\n// Run ID\n// ============================================================\n\nconst run_id = String(\n  x.run_id || ''\n).trim();\n\nif (!run_id) {\n  throw new Error('Missing run_id');\n}\n\n// ============================================================\n// Binary image\n// ============================================================\n\nconst binary = $binary?.data;\n\nif (!binary) {\n  throw new Error(\n    `Missing binary.data for H3 image, run_id: ${run_id}`\n  );\n}\n\nconst binaryFilename = String(\n  binary.fileName || ''\n).trim();\n\nif (!binaryFilename) {\n  throw new Error(\n    `Missing binary.data.fileName for run_id: ${run_id}`\n  );\n}\n\nconst imageFilename = String(\n  x.comfy_image_filename ||\n  x.image_filename ||\n  binaryFilename\n).trim();\n\nif (!imageFilename) {\n  throw new Error(\n    `Missing image filename for run_id: ${run_id}`\n  );\n}\n\n// ============================================================\n// Dynamic duration\n// ============================================================\n\nconst duration = Number(\n  x.video_duration ??\n  x.duration ??\n  5\n);\n\nif (\n  !Number.isFinite(duration) ||\n  duration <= 0\n) {\n  throw new Error(\n    `Invalid duration for run_id ${run_id}: ${duration}`\n  );\n}\n\n// ============================================================\n// H3 prompt\n//\n// Parse H3 Director Output đã tạo COMPLETE prompt.\n// Không prepend thêm prefix.\n// ============================================================\n\nconst h3Prompt = String(\n  x.h3_prompt || ''\n).trim();\n\nif (!h3Prompt) {\n  throw new Error(\n    `Missing h3_prompt for run_id: ${run_id}`\n  );\n}\n\n// ============================================================\n// Seed\n// ============================================================\n\nconst seedRaw =\n  x.h3_seed ??\n  x.seed ??\n  null;\n\nlet seed;\n\nif (\n  seedRaw !== null &&\n  String(seedRaw).trim() !== ''\n) {\n  seed = Number(seedRaw);\n\n  if (\n    !Number.isInteger(seed) ||\n    seed < 0 ||\n    seed > 4294967295\n  ) {\n    throw new Error(\n      `Invalid seed for run_id ${run_id}: ${seedRaw}`\n    );\n  }\n} else {\n  seed = Math.floor(\n    Math.random() * 4294967296\n  );\n}\n\n// ============================================================\n// H3 STANDARD WORKFLOW\n// ============================================================\n\nconst graph = {\n\n  '119': {\n    inputs: {\n      image: imageFilename\n    },\n    class_type: 'LoadImage'\n  },\n\n  '120': {\n    inputs: {\n      image: imageFilename\n    },\n    class_type: 'LoadImage'\n  },\n\n  '121': {\n    inputs: {\n      vae_name:\n        'h3/minimax_h3_video_vae_int8_convrot.safetensors'\n    },\n    class_type: 'VAELoader'\n  },\n\n  '122': {\n    inputs: {\n      vae_name:\n        'h3/minimax_h3_audio_vae_fp32.safetensors'\n    },\n    class_type: 'VAELoader'\n  },\n\n  '123': {\n    inputs: {\n      samples: ['234', 0],\n      vae: ['122', 0]\n    },\n    class_type: 'VAEDecodeAudio'\n  },\n\n  '124': {\n    inputs: {\n      samples: ['234', 0],\n      vae: ['121', 0]\n    },\n    class_type: 'VAEDecode'\n  },\n\n  '132': {\n    inputs: {\n      fps: 24,\n      bit_depth: 10,\n      images: ['124', 0],\n      audio: ['123', 0]\n    },\n    class_type: 'CreateVideo'\n  },\n\n  '133': {\n    inputs: {\n      prompt: ['194', 0],\n      width: ['153', 0],\n      height: ['153', 1],\n      length: ['134', 1],\n      clip: ['232', 0],\n      vae: ['121', 0],\n      first_frame: ['176', 0],\n      last_frame: ['177', 0]\n    },\n    class_type: 'MiniMaxH3ImageToVideo'\n  },\n\n  '134': {\n    inputs: {\n      expression:\n        'max(5, round(a * 24)) + (5 - (max(5, round(a * 24)) % 17)) % 17',\n\n      'values.a': ['135', 0]\n    },\n    class_type: 'ComfyMathExpression'\n  },\n\n  '135': {\n    inputs: {\n      value: duration\n    },\n    class_type: 'PrimitiveFloat'\n  },\n\n  '150': {\n    inputs: {\n      max_resolution: 1024,\n      jpeg_quality: 80,\n      suppress_default_preview: true,\n      preview_frames: 600,\n      preview_fps: 12,\n      tiny_vae: 'taeh3.safetensors',\n      model: ['192', 0]\n    },\n    class_type: 'ModelPreviewOverrideKJ'\n  },\n\n  '153': {\n    inputs: {\n      ResolutionState:\n        '{\"mode\":\"custom_ratio\",\"ratio\":\"16:9\",\"w\":1376,\"h\":768,\"custom_w\":960,\"custom_h\":576,\"custom_ratio_w\":16,\"custom_ratio_h\":9,\"snap\":32}'\n    },\n    class_type: 'PixaromaResolution'\n  },\n\n  '159': {\n    inputs: {\n      filename_prefix:\n        `video/${run_id}`,\n      format: 'auto',\n      codec: 'auto',\n      video: ['132', 0]\n    },\n    class_type: 'SaveVideo'\n  },\n\n  '176': {\n    inputs: {\n      width: ['153', 0],\n      height: ['153', 1],\n      interpolation: 'area',\n      method: 'fill / crop',\n      condition: 'always',\n      multiple_of: 0,\n      image: ['119', 0]\n    },\n    class_type: 'ImageResize+'\n  },\n\n  '177': {\n    inputs: {\n      width: ['153', 0],\n      height: ['153', 1],\n      interpolation: 'area',\n      method: 'fill / crop',\n      condition: 'always',\n      multiple_of: 0,\n      image: ['120', 0]\n    },\n    class_type: 'ImageResize+'\n  },\n\n  '192': {\n    inputs: {\n      text: '',\n      loras: {\n        __value__: []\n      },\n      model: ['237', 0]\n    },\n    class_type: 'Lora Loader (LoraManager)'\n  },\n\n  '194': {\n    inputs: {\n      value: h3Prompt\n    },\n    class_type: 'PrimitiveStringMultiline'\n  },\n\n  '232': {\n    inputs: {\n      clip_name:\n        'h3/qwen3vl_32b_minimax_h3_int8_convrot.safetensors',\n      type: 'minimax',\n      device: 'default'\n    },\n    class_type: 'CLIPLoader'\n  },\n\n  '234': {\n    inputs: {\n      eta: 0.5,\n      sampler_name: 'linear/euler',\n      scheduler: 'simple',\n      steps: 8,\n      steps_to_run: -1,\n      denoise: 1,\n      cfg: 1,\n\n      seed: seed,\n\n      sampler_mode: 'standard',\n      bongmath: false,\n      model: ['243', 0],\n      positive: ['133', 0],\n      negative: ['235', 0],\n      latent_image: ['133', 1]\n    },\n    class_type: 'ClownsharKSampler_Beta'\n  },\n\n  '235': {\n    inputs: {\n      conditioning: ['133', 0]\n    },\n    class_type: 'ConditioningZeroOut'\n  },\n\n  '237': {\n    inputs: {\n      unet_name:\n        'h3/minimaxH3INT8INT4_fl2vaINT8Pruned.safetensors',\n      weight_dtype: 'default'\n    },\n    class_type: 'UNETLoader'\n  },\n\n  '238': {\n    inputs: {\n      clip_name:\n        'h3/qwen3-vl-4b-heretic_nvfp4.safetensors',\n      type: 'auto',\n      projection:\n        'mmh3-4b-ClipProj-celeb-mlp.safetensors',\n      device: 'cuda:0',\n      mode: 'dynamic'\n    },\n    class_type: 'ClipProjLoader'\n  },\n\n  '243': {\n    inputs: {\n      lora_name:\n        'h3/minimax_h3_fl2v_lightx2v_turbo_4step_v0.1_comfy_resized_avg_rank_21_bf16.safetensors',\n      strength_model: 0.8,\n      model: ['150', 0]\n    },\n    class_type: 'LoraLoaderModelOnly'\n  }\n};\n\n// ============================================================\n// Payload\n// ============================================================\n\nconst h3_payload = {\n  prompt: graph,\n  client_id:\n    `n8n-h3-${run_id}`\n};\n\n// ============================================================\n// Return JSON + original binary\n// ============================================================\n\nreturn [\n  {\n    json: {\n      ...x,\n\n      run_id,\n\n      comfy_image_filename:\n        imageFilename,\n\n      comfy_image_subfolder:\n        '',\n\n      comfy_image_type:\n        'input',\n\n      h3_duration:\n        duration,\n\n      h3_prompt:\n        h3Prompt,\n\n      h3_seed:\n        seed,\n\n      h3_graph:\n        graph,\n\n      h3_payload\n    },\n\n    binary: {\n      data: binary\n    }\n  }\n];"
+      },
+      "id": "46ed9690-59dd-47d7-a84f-922863223b6c",
+      "name": "Build H3 Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2736,
+        8000
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ ($env.COMFYUI_BASE_URL || 'http://host.docker.internal:8188') + '/prompt' }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.h3_graph }}",
+        "options": {}
+      },
+      "id": "07a6b903-a30b-4b1e-b21d-6bcfe361a7ac",
+      "name": "H3 - Submit",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -2256,
+        8000
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ ($env.COMFYUI_BASE_URL || 'http://host.docker.internal:8188') + '/upload/image' }}",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "image",
+              "inputDataFieldName": "data"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "adb30489-65d1-43ac-9003-b24d92b72d17",
+      "name": "Upload Current Image To ComfyUI",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -2736,
+        8144
+      ]
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -2464,
+        8016
+      ],
+      "id": "b788f8ed-0b6a-496c-aaf9-f9fae617c83a",
+      "name": "Merge2"
+    }
+  ],
+  "connections": {
+    "Build H3 Payload": {
+      "main": [
+        [
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "H3 - Submit": {
+      "main": [
+        []
+      ]
+    },
+    "Upload Current Image To ComfyUI": {
+      "main": [
+        [
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge2": {
+      "main": [
+        [
+          {
+            "node": "H3 - Submit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "5b3bfaa0bfb34dcd6a48dec4404a2cb3bcc519d830c46a68b973b8ab503454a0"
+  }
+}
