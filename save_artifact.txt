@@ -1,16 +1,60 @@
+// ============================================================
+// Save Artifact
+//
+// Purpose:
+// - Save binary artifacts to the production filesystem.
+// - Register already-existing filesystem artifacts without
+//   copying them again.
+// - Maintain artifact manifest.
+// - Version scope:
+//
+//     name + variant + mode
+//
+// Binary flow:
+//
+//     binary exists
+//         ↓
+//     create canonical artifact filename
+//         ↓
+//     write binary
+//         ↓
+//     register manifest
+//
+// Existing-file flow:
+//
+//     no binary
+//         ↓
+//     resolve input.path / input.output_path
+//         ↓
+//     file exists
+//         ↓
+//     register manifest only
+//
+// If neither binary nor existing file exists:
+//     throw error
+//
+// Canonical filename examples:
+//
+//     run_xxx.lyrics.001.txt
+//     run_xxx.image.001.png
+//     run_xxx.audio.00.preview.001.flac
+//     run_xxx.audio.00.full.001.flac
+//     run_xxx.video.002.mp4
+//     run_xxx.video.visual.001.mp4
+// ============================================================
+
 const fs = require('fs');
 
-const items = $input.all();
 
-const DEFAULT_PRODUCTION_ROOT = '/data/productions';
-
-
-/* =========================================================
- * Helpers
- * =======================================================*/
+// ============================================================
+// 1. Helpers
+// ============================================================
 
 function cleanString(value) {
-  if (value === null || value === undefined) {
+  if (
+    value === null ||
+    value === undefined
+  ) {
     return '';
   }
 
@@ -18,43 +62,48 @@ function cleanString(value) {
 }
 
 
-function nullableString(value) {
-  const valueClean = cleanString(value);
-  return valueClean !== '' ? valueClean : null;
-}
-
-
 function safePart(value) {
-  return cleanString(value)
-    .replace(/[^a-zA-Z0-9._-]+/g, '_')
-    .replace(/^_+|_+$/g, '');
+  const result =
+    cleanString(value)
+      .replace(/[^a-zA-Z0-9._-]+/g, '_')
+      .replace(/^_+|_+$/g, '');
+
+  if (!result) {
+    throw new Error(
+      `Save Artifact: invalid path component: "${value}"`
+    );
+  }
+
+  return result;
 }
 
 
-/*
- * IMPORTANT:
- * Preserve the leading "/" when the first path is absolute.
- *
- * /data/productions
- * must NOT become
- * data/productions
- */
 function joinPath(...parts) {
   if (!parts.length) {
     return '';
   }
 
-  const first = String(parts[0] ?? '');
+  const first =
+    String(
+      parts[0] ?? ''
+    );
 
-  const isAbsolute = first.startsWith('/');
+  const isAbsolute =
+    first.startsWith('/');
 
-  const cleaned = parts
-    .map(part =>
-      String(part ?? '')
-        .replace(/^\/+|\/+$/g, '')
-    )
-    .filter(Boolean)
-    .join('/');
+  const cleaned =
+    parts
+      .map(part =>
+        String(
+          part ?? ''
+        )
+          .replace(
+            /^\/+|\/+$/g,
+            ''
+          )
+      )
+      .filter(Boolean)
+      .join('/');
 
   return isAbsolute
     ? `/${cleaned}`
@@ -62,478 +111,881 @@ function joinPath(...parts) {
 }
 
 
-function ensureDir(dirPath) {
-  fs.mkdirSync(dirPath, {
-    recursive: true
-  });
-}
-
-
-function readJsonFile(filePath, fallback) {
-  if (!fs.existsSync(filePath)) {
-    return fallback;
-  }
-
-  try {
-    const raw = fs.readFileSync(filePath, 'utf8');
-
-    if (!raw.trim()) {
-      return fallback;
-    }
-
-    return JSON.parse(raw);
-  } catch (error) {
-    throw new Error(
-      `Save Artifact: failed to read JSON file "${filePath}": ${error.message}`
-    );
-  }
-}
-
-
-function writeJsonFile(filePath, data) {
-  fs.writeFileSync(
-    filePath,
-    JSON.stringify(data, null, 2),
-    'utf8'
-  );
-}
-
-
-function normalizeReference(reference) {
-  if (reference === null || reference === undefined) {
+function normalizeReference(value) {
+  if (
+    value === null ||
+    value === undefined
+  ) {
     return [];
   }
 
-  if (Array.isArray(reference)) {
-    return reference
-      .map(value => cleanString(value))
-      .filter(Boolean);
-  }
+  const values =
+    Array.isArray(value)
+      ? value
+      : [value];
 
-  const value = cleanString(reference);
-
-  return value ? [value] : [];
+  return values
+    .map(item =>
+      cleanString(item)
+    )
+    .filter(Boolean);
 }
 
 
-function getBinaryExtension(binaryInfo) {
-  const extension = cleanString(
-    binaryInfo.fileExtension ||
-    binaryInfo.extension ||
-    ''
-  ).toLowerCase();
+function normalizeAbsolutePath(value) {
+  const raw =
+    cleanString(value);
 
-  if (extension) {
-    return extension.replace(/^\./, '');
+  if (!raw) {
+    return '';
   }
 
-  const fileName = cleanString(
-    binaryInfo.fileName ||
-    binaryInfo.filename ||
-    ''
+  if (raw.startsWith('/')) {
+    return raw;
+  }
+
+  return `/data/${raw}`;
+}
+
+
+function mimeFromExtension(extension) {
+  const map = {
+    txt: 'text/plain',
+    json: 'application/json',
+
+    png: 'image/png',
+    jpg: 'image/jpeg',
+    jpeg: 'image/jpeg',
+    webp: 'image/webp',
+
+    mp3: 'audio/mpeg',
+    wav: 'audio/wav',
+    flac: 'audio/flac',
+    ogg: 'audio/ogg',
+    m4a: 'audio/mp4',
+
+    mp4: 'video/mp4',
+    webm: 'video/webm',
+    mov: 'video/quicktime',
+    mkv: 'video/x-matroska'
+  };
+
+  return (
+    map[
+      cleanString(
+        extension
+      ).toLowerCase()
+    ] ||
+    null
   );
-
-  const match = fileName.match(/\.([a-zA-Z0-9]+)$/);
-
-  if (match) {
-    return match[1].toLowerCase();
-  }
-
-  return '';
 }
 
 
-function getMimeType(binaryInfo) {
-  return cleanString(
-    binaryInfo.mimeType ||
-    binaryInfo.mime_type ||
-    'application/octet-stream'
-  );
-}
-
-
-function resolveBinaryInfo(item, binaryField) {
-  const binary = item.binary || {};
-
-  if (!binary[binaryField]) {
-    throw new Error(
-      `Save Artifact: binary field "${binaryField}" not found`
+function extensionFromFilename(filename) {
+  const match =
+    cleanString(
+      filename
+    ).match(
+      /\.([a-zA-Z0-9]+)$/
     );
-  }
 
-  return binary[binaryField];
+  return match
+    ? match[1].toLowerCase()
+    : '';
 }
 
 
-/* =========================================================
- * Main
- * =======================================================*/
+function extensionFromMime(mimeType) {
+  const mime =
+    cleanString(
+      mimeType
+    ).toLowerCase();
+
+  const map = {
+    'text/plain': 'txt',
+    'application/json': 'json',
+
+    'image/png': 'png',
+    'image/jpeg': 'jpg',
+    'image/webp': 'webp',
+
+    'audio/mpeg': 'mp3',
+    'audio/wav': 'wav',
+    'audio/x-wav': 'wav',
+    'audio/flac': 'flac',
+    'audio/ogg': 'ogg',
+    'audio/mp4': 'm4a',
+
+    'video/mp4': 'mp4',
+    'video/webm': 'webm',
+    'video/quicktime': 'mov',
+    'video/x-matroska': 'mkv'
+  };
+
+  return (
+    map[mime] ||
+    ''
+  );
+}
+
+
+// ============================================================
+// 2. Resolve binary information
+//
+// n8n 2.x may store binary data externally.
+// Do NOT inspect binaryData.data directly.
+//
+// The presence of the binary property is enough to enter
+// binary mode. Actual bytes are loaded with:
+// this.helpers.getBinaryDataBuffer(...)
+// ============================================================
+
+function resolveBinaryData(item) {
+  if (
+    !item ||
+    !item.binary
+  ) {
+    return null;
+  }
+
+  const binary =
+    item.binary;
+
+  const fields =
+    Object.keys(
+      binary
+    );
+
+  if (!fields.length) {
+    return null;
+  }
+
+  const preferred =
+    fields.includes('data')
+      ? 'data'
+      : fields[0];
+
+  const binaryInfo =
+    binary[preferred];
+
+  if (!binaryInfo) {
+    return null;
+  }
+
+  return {
+    field: preferred,
+    data: binaryInfo
+  };
+}
+
+
+// ============================================================
+// 3. Current input
+// ============================================================
+
+const items =
+  $input.all();
+
+if (!items.length) {
+  throw new Error(
+    'Save Artifact: no input items.'
+  );
+}
+
+
+// ============================================================
+// 4. Production root
+// ============================================================
+
+const DEFAULT_PRODUCTION_ROOT =
+  '/data/productions';
+
+
+// ============================================================
+// 5. Process items
+// ============================================================
 
 const output = [];
-
 
 for (
   let itemIndex = 0;
   itemIndex < items.length;
   itemIndex++
 ) {
-  const item = items[itemIndex];
+  const item =
+    items[itemIndex];
 
-  const input = item.json || {};
+  const input =
+    {
+      ...(item.json || {})
+    };
 
 
-  /* -------------------------------------------------------
-   * Basic fields
-   * -----------------------------------------------------*/
+  // ==========================================================
+  // 5.1 run_id
+  // ==========================================================
 
-  const run_id = cleanString(
-    input.run_id ??
-    input.output?.run_id
-  );
+  const run_id =
+    cleanString(
+      input.run_id
+    );
 
   if (!run_id) {
     throw new Error(
-      'Save Artifact: missing run_id'
+      'Save Artifact: missing run_id.'
+    );
+  }
+
+  if (
+    run_id.includes('/') ||
+    run_id.includes('\\') ||
+    run_id.includes('..')
+  ) {
+    throw new Error(
+      `Save Artifact: invalid run_id: ${run_id}`
     );
   }
 
 
+  // ==========================================================
+  // 5.2 Production root
+  // ==========================================================
+
   const productionRoot =
-    cleanString(input.production_root) ||
+    cleanString(
+      input.production_root
+    ) ||
     DEFAULT_PRODUCTION_ROOT;
 
+  if (
+    !productionRoot.startsWith('/')
+  ) {
+    throw new Error(
+      `Save Artifact: production_root must be absolute: ${productionRoot}`
+    );
+  }
+
+
+  // ==========================================================
+  // 5.3 Run directory
+  // ==========================================================
 
   const runDir =
-    cleanString(input.run_dir) ||
     joinPath(
       productionRoot,
       run_id
     );
 
 
-  const artifact_name = safePart(
-    input.artifact_name ||
-    input.name
-  );
-
-  if (!artifact_name) {
-    throw new Error(
-      'Save Artifact: missing artifact_name'
-    );
-  }
-
-
-  /*
-   * variant:
-   *
-   * null for lyrics/image/video/etc.
-   * "00" for music variants.
-   */
-  const variant = nullableString(
-    input.variant
-  );
-
-
-  /*
-   * mode:
-   *
-   * null
-   * preview
-   * full
-   */
-  const modeRaw = nullableString(
-    input.mode
-  );
-
-  const mode = modeRaw
-    ? modeRaw.toLowerCase()
-    : null;
-
-
-  /*
-   * Binary field.
-   *
-   * Default is "data".
-   */
-  const binaryField =
-    cleanString(
-      input.binary_field
-    ) || 'data';
-
-
-  /* -------------------------------------------------------
-   * Manifest
-   * -----------------------------------------------------*/
+  // ==========================================================
+  // 5.4 Manifest
+  // ==========================================================
 
   const manifestPath =
-    cleanString(input.manifest_path) ||
+    cleanString(
+      input.manifest_path
+    ) ||
     joinPath(
       runDir,
       `${run_id}.artifacts.json`
     );
 
 
-  ensureDir(runDir);
+  // ==========================================================
+  // 5.5 Artifact identity
+  // ==========================================================
+
+  const artifact_name =
+    cleanString(
+      input.artifact_name ||
+      input.name
+    );
+
+  if (!artifact_name) {
+    throw new Error(
+      `Save Artifact: missing artifact_name for run_id: ${run_id}`
+    );
+  }
+
+  const variant =
+    cleanString(
+      input.variant
+    ) || null;
+
+  const mode =
+    cleanString(
+      input.mode
+    ).toLowerCase() || null;
 
 
-  let manifestData = readJsonFile(
-    manifestPath,
-    {
-      run_id,
-      artifacts: []
-    }
-  );
+  // ==========================================================
+  // 5.6 Extension / MIME from input
+  // ==========================================================
 
+  let extension =
+    cleanString(
+      input.extension
+    ).toLowerCase();
+
+  let mime_type =
+    cleanString(
+      input.mime_type
+    );
+
+
+  // ==========================================================
+  // 5.7 Load existing manifest
+  // ==========================================================
+
+  let manifest = {
+    run_id,
+    artifacts: []
+  };
 
   if (
-    !manifestData ||
-    typeof manifestData !== 'object'
+    fs.existsSync(
+      manifestPath
+    )
   ) {
-    manifestData = {
+    const raw =
+      fs.readFileSync(
+        manifestPath,
+        'utf8'
+      );
+
+    if (raw.trim()) {
+      try {
+        manifest =
+          JSON.parse(
+            raw
+          );
+      } catch (error) {
+        throw new Error(
+          `Save Artifact: invalid manifest JSON: ${manifestPath}`
+        );
+      }
+    }
+  }
+
+  if (
+    !manifest ||
+    typeof manifest !== 'object'
+  ) {
+    manifest = {
       run_id,
       artifacts: []
     };
   }
 
-
-  if (!Array.isArray(manifestData.artifacts)) {
-    manifestData.artifacts = [];
+  if (
+    !Array.isArray(
+      manifest.artifacts
+    )
+  ) {
+    manifest.artifacts = [];
   }
 
-
-  if (!manifestData.run_id) {
-    manifestData.run_id = run_id;
-  }
+  manifest.run_id =
+    run_id;
 
 
-  /* -------------------------------------------------------
-   * Determine next version
-   *
-   * Scope:
-   *   name + variant + mode
-   *
-   * Therefore:
-   *
-   * audio / 00 / preview
-   * audio / 00 / full
-   *
-   * have independent version sequences.
-   * -----------------------------------------------------*/
+  // ==========================================================
+  // 5.8 Determine next version
+  //
+  // Version scope:
+  //
+  //     name + variant + mode
+  //
+  // Example:
+  //
+  // audio / 00 / preview
+  // audio / 00 / full
+  //
+  // are independent version sequences.
+  // ==========================================================
 
   const scopedArtifacts =
-    manifestData.artifacts.filter(
-      artifact =>
-        cleanString(artifact?.name) === artifact_name &&
-        nullableString(artifact?.variant) === variant &&
-        nullableString(artifact?.mode) === mode
+    manifest.artifacts
+      .filter(artifact => {
+        if (
+          !artifact ||
+          artifact.name !== artifact_name
+        ) {
+          return false;
+        }
+
+        const artifactVariant =
+          cleanString(
+            artifact.variant
+          ) || null;
+
+        const artifactMode =
+          cleanString(
+            artifact.mode
+          ).toLowerCase() || null;
+
+        return (
+          artifactVariant === variant &&
+          artifactMode === mode
+        );
+      });
+
+  const maxVersion =
+    scopedArtifacts.reduce(
+      (max, artifact) => {
+        const value =
+          Number(
+            artifact.version
+          );
+
+        return (
+          Number.isInteger(value) &&
+          value > max
+        )
+          ? value
+          : max;
+      },
+      0
+    );
+
+  const version =
+    maxVersion + 1;
+
+  const versionTag =
+    String(
+      version
+    ).padStart(
+      3,
+      '0'
     );
 
 
-  let maxVersion = 0;
+  // ==========================================================
+  // 5.9 Normalize reference
+  // ==========================================================
+
+  const reference =
+    normalizeReference(
+      input.reference ??
+      input.references ??
+      input.saved_artifact?.reference ??
+      input.artifact?.reference ??
+      []
+    );
 
 
-  for (const artifact of scopedArtifacts) {
-    const versionNumber =
-      Number(artifact?.version);
+  // ==========================================================
+  // 5.10 Detect binary
+  // ==========================================================
+
+  const binaryInfo =
+    resolveBinaryData(
+      item
+    );
+
+
+  // ==========================================================
+  // 5.11 Variables
+  // ==========================================================
+
+  let filename = null;
+  let filePath = null;
+  let size_bytes = null;
+
+
+  // ==========================================================
+  // 6. BINARY MODE
+  //
+  // Binary exists:
+  //
+  // - generate canonical filename
+  // - save binary
+  // - register artifact
+  // ==========================================================
+
+  if (binaryInfo) {
+
+    const binaryData =
+      binaryInfo.data;
+
+
+    // --------------------------------------------------------
+    // Resolve MIME
+    // --------------------------------------------------------
+
+    mime_type =
+      mime_type ||
+      cleanString(
+        binaryData.mimeType
+      ) ||
+      null;
+
+
+    // --------------------------------------------------------
+    // Resolve extension
+    // --------------------------------------------------------
+
+    const binaryFilename =
+      cleanString(
+        binaryData.fileName
+      );
+
+    if (!extension) {
+      extension =
+        extensionFromFilename(
+          binaryFilename
+        );
+    }
+
+    if (!extension) {
+      extension =
+        extensionFromMime(
+          mime_type
+        );
+    }
+
+    if (!extension) {
+      extension =
+        'bin';
+    }
+
+
+    // --------------------------------------------------------
+    // Canonical filename
+    //
+    // name.variant.mode.version.ext
+    //
+    // Empty variant/mode fields are omitted.
+    // --------------------------------------------------------
+
+    const variantPart =
+      variant
+        ? `.${safePart(variant)}`
+        : '';
+
+    const modePart =
+      mode
+        ? `.${safePart(mode)}`
+        : '';
+
+    filename =
+      `${safePart(run_id)}` +
+      `.${safePart(artifact_name)}` +
+      `${variantPart}` +
+      `${modePart}` +
+      `.${versionTag}` +
+      `.${safePart(extension)}`;
+
+
+    filePath =
+      joinPath(
+        runDir,
+        filename
+      );
+
+
+    // --------------------------------------------------------
+    // Prevent overwrite
+    // --------------------------------------------------------
 
     if (
-      Number.isInteger(versionNumber) &&
-      versionNumber > maxVersion
+      fs.existsSync(
+        filePath
+      )
     ) {
-      maxVersion = versionNumber;
+      throw new Error(
+        `Save Artifact: refusing to overwrite existing file "${filePath}"`
+      );
+    }
+
+
+    // --------------------------------------------------------
+    // Get binary bytes
+    //
+    // Required because n8n 2.x can store binary externally.
+    // --------------------------------------------------------
+
+    const buffer =
+      await this.helpers.getBinaryDataBuffer(
+        itemIndex,
+        binaryInfo.field
+      );
+
+    if (
+      !buffer ||
+      buffer.length === 0
+    ) {
+      throw new Error(
+        `Save Artifact: binary field "${binaryInfo.field}" has no data`
+      );
+    }
+
+
+    // --------------------------------------------------------
+    // Ensure directory
+    // --------------------------------------------------------
+
+    fs.mkdirSync(
+      runDir,
+      {
+        recursive: true
+      }
+    );
+
+
+    // --------------------------------------------------------
+    // Write binary
+    // --------------------------------------------------------
+
+    fs.writeFileSync(
+      filePath,
+      buffer
+    );
+
+    size_bytes =
+      buffer.length;
+
+
+    // --------------------------------------------------------
+    // Resolve MIME fallback
+    // --------------------------------------------------------
+
+    if (!mime_type) {
+      mime_type =
+        mimeFromExtension(
+          extension
+        );
     }
   }
 
 
-  const version = maxVersion + 1;
+  // ==========================================================
+  // 7. EXISTING FILE MODE
+  //
+  // No binary.
+  //
+  // Producer already created the file:
+  //
+  //     FFmpeg
+  //     ComfyUI
+  //     external processor
+  //
+  // Save Artifact only registers it.
+  // ==========================================================
+
+  else {
+
+    const existingPathRaw =
+      cleanString(
+        input.path ||
+        input.output_path ||
+        input.output?.path ||
+        input.output?.output_path
+      );
+
+    if (!existingPathRaw) {
+      throw new Error(
+        `Save Artifact: no binary data and no existing artifact path for run_id: ${run_id}`
+      );
+    }
 
 
-  const versionTag =
-    String(version).padStart(3, '0');
+    // --------------------------------------------------------
+    // Normalize path
+    // --------------------------------------------------------
+
+    filePath =
+      normalizeAbsolutePath(
+        existingPathRaw
+      );
 
 
-  /* -------------------------------------------------------
-   * Resolve binary metadata
-   * -----------------------------------------------------*/
+    // --------------------------------------------------------
+    // Security check
+    //
+    // Existing artifacts must remain inside production root.
+    // --------------------------------------------------------
 
-  const binaryInfo =
-    resolveBinaryInfo(
-      item,
-      binaryField
-    );
+    const normalizedRoot =
+      productionRoot.endsWith('/')
+        ? productionRoot
+        : `${productionRoot}/`;
+
+    if (
+      !filePath.startsWith(
+        normalizedRoot
+      )
+    ) {
+      throw new Error(
+        `Save Artifact: existing artifact path is outside production root: ${filePath}`
+      );
+    }
 
 
-  const extension =
-    safePart(
-      input.extension ||
-      getBinaryExtension(binaryInfo)
-    ).toLowerCase();
+    // --------------------------------------------------------
+    // File must already exist
+    // --------------------------------------------------------
+
+    if (
+      !fs.existsSync(
+        filePath
+      )
+    ) {
+      throw new Error(
+        `Save Artifact: existing artifact file does not exist: ${filePath}`
+      );
+    }
 
 
-  if (!extension) {
-    throw new Error(
-      `Save Artifact: cannot determine file extension for binary field "${binaryField}"`
-    );
+    // --------------------------------------------------------
+    // Must be a regular file
+    // --------------------------------------------------------
+
+    const stat =
+      fs.statSync(
+        filePath
+      );
+
+    if (
+      !stat.isFile()
+    ) {
+      throw new Error(
+        `Save Artifact: existing artifact path is not a file: ${filePath}`
+      );
+    }
+
+
+    // --------------------------------------------------------
+    // Register existing file
+    // --------------------------------------------------------
+
+    filename =
+      filePath
+        .split('/')
+        .pop();
+
+    if (!filename) {
+      throw new Error(
+        `Save Artifact: cannot resolve filename from path: ${filePath}`
+      );
+    }
+
+    size_bytes =
+      stat.size;
+
+
+    // --------------------------------------------------------
+    // Resolve extension
+    // --------------------------------------------------------
+
+    if (!extension) {
+      extension =
+        extensionFromFilename(
+          filename
+        );
+    }
+
+
+    // --------------------------------------------------------
+    // Resolve MIME
+    // --------------------------------------------------------
+
+    if (!mime_type) {
+      mime_type =
+        mimeFromExtension(
+          extension
+        );
+    }
+
+
+    // --------------------------------------------------------
+    // IMPORTANT
+    //
+    // Existing file is NOT copied.
+    // Existing file is NOT renamed.
+    // Existing file is NOT overwritten.
+    //
+    // filePath remains the producer's actual path.
+    // --------------------------------------------------------
   }
 
 
-  const mime_type =
-    cleanString(
-      input.mime_type ||
-      getMimeType(binaryInfo)
-    ) ||
-    'application/octet-stream';
-
-
-  const source_filename =
-    cleanString(
-      input.source_filename ||
-      binaryInfo.fileName ||
-      binaryInfo.filename
-    ) ||
-    null;
-
-
-  /* -------------------------------------------------------
-   * Build filename
-   *
-   * Examples:
-   *
-   * run_x.audio.00.preview.001.flac
-   * run_x.audio.00.preview.002.flac
-   *
-   * run_x.audio.00.full.001.flac
-   * run_x.audio.00.full.002.flac
-   *
-   * run_x.lyrics.001.txt
-   * run_x.image.001.png
-   * -----------------------------------------------------*/
-
-  const variantPart =
-    variant
-      ? `.${safePart(variant)}`
-      : '';
-
-
-  const modePart =
-    mode
-      ? `.${safePart(mode)}`
-      : '';
-
-
-  const filename =
-    `${run_id}.${artifact_name}` +
-    `${variantPart}` +
-    `${modePart}` +
-    `.${versionTag}.${extension}`;
-
-
-  const filePath =
-    joinPath(
-      runDir,
-      filename
-    );
-
-
-  /* -------------------------------------------------------
-   * Collision protection
-   * -----------------------------------------------------*/
-
-  if (fs.existsSync(filePath)) {
-    throw new Error(
-      `Save Artifact: refusing to overwrite existing file "${filePath}"`
-    );
-  }
-
-
-  /* -------------------------------------------------------
-   * Read binary
-   *
-   * IMPORTANT:
-   *
-   * Do NOT use:
-   *
-   *   binaryInfo.data
-   *
-   * n8n may store binary data externally.
-   *
-   * getBinaryDataBuffer() works with n8n's binary
-   * storage implementation.
-   * -----------------------------------------------------*/
-
-  const buffer =
-    await this.helpers.getBinaryDataBuffer(
-      itemIndex,
-      binaryField
-    );
-
-
-  if (
-    !buffer ||
-    buffer.length === 0
-  ) {
-    throw new Error(
-      `Save Artifact: binary field "${binaryField}" has no data`
-    );
-  }
-
-
-  /* -------------------------------------------------------
-   * Write artifact
-   * -----------------------------------------------------*/
-
-  fs.writeFileSync(
-    filePath,
-    buffer
-  );
-
-
-  /* -------------------------------------------------------
-   * Build artifact record
-   * -----------------------------------------------------*/
-
-  const reference =
-    normalizeReference(
-      input.reference
-    );
-
+  // ==========================================================
+  // 8. created_at
+  // ==========================================================
 
   const created_at =
-    new Date().toISOString();
+    new Date()
+      .toISOString();
 
+
+  // ==========================================================
+  // 9. Artifact record
+  // ==========================================================
 
   const artifactRecord = {
-    name: artifact_name,
-    variant,
-    mode,
-    version,
-    filename,
-    path: filePath,
-    mime_type,
-    size_bytes: buffer.length,
-    created_at,
-    reference
+    name:
+      artifact_name,
+
+    variant:
+      variant,
+
+    mode:
+      mode,
+
+    version:
+      version,
+
+    filename:
+      filename,
+
+    path:
+      filePath,
+
+    mime_type:
+      mime_type ||
+      null,
+
+    size_bytes:
+      size_bytes,
+
+    created_at:
+      created_at,
+
+    reference:
+      reference
   };
 
 
-  /*
-   * Preserve useful metadata when supplied.
-   */
+  // ==========================================================
+  // 10. Preserve additional metadata
+  //
+  // These are useful for audio/video/image provenance.
+  // ==========================================================
 
-  const optionalFields = [
-    'template_filename',
-    'music_template_filename',
+  const metadataFields = [
     'seed',
     'lyrics_version',
-    'source_filename'
+    'music_template_filename',
+    'source_filename',
+    'output_filename',
+    'duration_seconds',
+    'width',
+    'height',
+    'fps',
+    'title',
+    'channel_name',
+    'visual_direction',
+    'theme',
+    'core_message'
   ];
 
-
-  for (const field of optionalFields) {
+  for (
+    const field of metadataFields
+  ) {
     if (
       input[field] !== undefined &&
-      input[field] !== null &&
-      input[field] !== ''
+      input[field] !== null
     ) {
       artifactRecord[field] =
         input[field];
@@ -541,101 +993,193 @@ for (
   }
 
 
-  /*
-   * source_filename:
-   * use resolved binary filename if it wasn't
-   * explicitly supplied in input.
-   */
+  // ==========================================================
+  // 11. Preserve arbitrary artifact metadata
+  //
+  // If upstream explicitly provides saved_artifact metadata,
+  // merge only fields that do not conflict with canonical
+  // artifact identity.
+  // ==========================================================
+
   if (
-    !artifactRecord.source_filename &&
-    source_filename
+    input.saved_artifact &&
+    typeof input.saved_artifact === 'object'
   ) {
-    artifactRecord.source_filename =
-      source_filename;
+    const ignoredFields = new Set([
+      'name',
+      'artifact_name',
+      'variant',
+      'mode',
+      'version',
+      'filename',
+      'path',
+      'mime_type',
+      'size_bytes',
+      'created_at',
+      'reference'
+    ]);
+
+    for (
+      const [key, value]
+      of Object.entries(
+        input.saved_artifact
+      )
+    ) {
+      if (
+        ignoredFields.has(key)
+      ) {
+        continue;
+      }
+
+      if (
+        artifactRecord[key] === undefined
+      ) {
+        artifactRecord[key] =
+          value;
+      }
+    }
   }
 
 
-  /* -------------------------------------------------------
-   * Update manifest
-   * -----------------------------------------------------*/
+  // ==========================================================
+  // 12. Append manifest
+  // ==========================================================
 
-  manifestData.artifacts.push(
+  manifest.artifacts.push(
     artifactRecord
   );
 
 
-  /*
-   * Keep manifest metadata minimal.
-   */
-  manifestData.run_id = run_id;
-  manifestData.updated_at =
-    created_at;
+  // ==========================================================
+  // 13. Ensure manifest directory
+  // ==========================================================
 
-
-  writeJsonFile(
-    manifestPath,
-    manifestData
+  fs.mkdirSync(
+    runDir,
+    {
+      recursive: true
+    }
   );
 
 
-  /* -------------------------------------------------------
-   * Return
-   * -----------------------------------------------------*/
+  // ==========================================================
+  // 14. Write manifest
+  // ==========================================================
 
-  output.push({
-    json: {
-      ...input,
+  fs.writeFileSync(
+    manifestPath,
+    JSON.stringify(
+      manifest,
+      null,
+      2
+    ),
+    'utf8'
+  );
 
+
+  // ==========================================================
+  // 15. Return result
+  //
+  // IMPORTANT:
+  //
+  // Existing-file mode intentionally returns NO binary.
+  //
+  // Binary mode returns binary so downstream Telegram nodes
+  // can still send the newly saved artifact when needed.
+  // ==========================================================
+
+  const resultJson = {
+    ...input,
+
+    run_id:
       run_id,
 
-      production_root:
-        productionRoot,
+    production_root:
+      productionRoot,
 
-      run_dir:
-        runDir,
+    run_dir:
+      runDir,
 
-      manifest_path:
-        manifestPath,
+    manifest_path:
+      manifestPath,
 
+    artifact_name:
       artifact_name,
 
+    variant:
       variant,
 
+    mode:
       mode,
 
-      artifact_version:
-        version,
-
+    artifact_version:
       version,
 
+    version:
+      version,
+
+    filename:
       filename,
 
-      path:
-        filePath,
+    path:
+      filePath,
 
-      mime_type,
+    mime_type:
+      mime_type ||
+      null,
 
-      size_bytes:
-        buffer.length,
+    size_bytes:
+      size_bytes,
 
+    created_at:
       created_at,
 
+    reference:
       reference,
 
-      source_filename,
+    saved_artifact:
+      artifactRecord
+  };
 
-      saved_artifact:
-        artifactRecord
-    },
-    binary: {
-      data: await this.helpers.prepareBinaryData(
-        buffer,
+
+  // ==========================================================
+  // 16. Return binary only when original input had binary
+  // ==========================================================
+
+  if (binaryInfo) {
+    const binaryData =
+      await this.helpers.getBinaryDataBuffer(
+        itemIndex,
+        binaryInfo.field
+      );
+
+    const preparedBinary =
+      await this.helpers.prepareBinaryData(
+        binaryData,
         filename,
         mime_type
-      )
-    }
-  });
+      );
+
+    output.push({
+      json:
+        resultJson,
+
+      binary: {
+        data:
+          preparedBinary
+      }
+    });
+  } else {
+    output.push({
+      json:
+        resultJson
+    });
+  }
 }
 
+
+// ============================================================
+// 17. Return
+// ============================================================
 
 return output;
