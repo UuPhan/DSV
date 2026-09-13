@@ -1,0 +1,741 @@
+const input = $json.output || $json;
+
+
+// ============================================================
+// 1. Validate input
+// ============================================================
+
+const run_id = String(
+  input.run_id || ''
+).trim();
+
+if (!run_id) {
+  throw new Error('run_id is missing.');
+}
+
+
+const integrated_multimodal_description = String(
+  input.integrated_multimodal_description || ''
+).trim();
+
+if (!integrated_multimodal_description) {
+  throw new Error(
+    'integrated_multimodal_description is missing.'
+  );
+}
+
+
+const overall_soundscape = String(
+  input.overall_soundscape || ''
+).trim();
+
+if (!overall_soundscape) {
+  throw new Error(
+    'overall_soundscape is missing.'
+  );
+}
+
+
+const non_diegetic_music = String(
+  input.non_diegetic_music || 'N/A'
+).trim();
+
+
+// ============================================================
+// 2. Resolve artifact refs
+// ============================================================
+
+const artifact_refs =
+  input.artifact_refs || {};
+
+const image_path = String(
+  artifact_refs.image_path || ''
+).trim();
+
+if (!image_path) {
+  throw new Error(
+    'artifact_refs.image_path is missing.'
+  );
+}
+
+
+const run_dir = String(
+  artifact_refs.run_dir || ''
+).trim();
+
+
+const lyrics_path = String(
+  artifact_refs.lyrics_path || ''
+).trim();
+
+
+// ============================================================
+// 3. Video settings
+// ============================================================
+
+const duration = 5;
+const fps = 24;
+
+
+// ============================================================
+// 4. Build MiniMax H3 prompt
+// ============================================================
+//
+// H3 uses one prompt string containing:
+//
+// integrated_multimodal_description:
+// overall_soundscape:
+// non_diegetic_music:
+//
+// The input description already contains the required
+// [0.0–1.0] ... [4.0–5.0] temporal structure.
+//
+
+const h3_prompt =
+`integrated_multimodal_description: ${integrated_multimodal_description}
+
+overall_soundscape: ${overall_soundscape}
+
+non_diegetic_music: N/A`;
+
+
+// ============================================================
+// 5. Build ComfyUI workflow
+// ============================================================
+
+const prompt = {
+
+  // ----------------------------------------------------------
+  // Load source image
+  // ----------------------------------------------------------
+
+  "119": {
+    "inputs": {
+      "image": image_path
+    },
+    "class_type": "LoadImage",
+    "_meta": {
+      "title": "Load Image"
+    }
+  },
+
+
+  // ----------------------------------------------------------
+  // Load source image for last frame
+  // ----------------------------------------------------------
+
+  "120": {
+    "inputs": {
+      "image": image_path
+    },
+    "class_type": "LoadImage",
+    "_meta": {
+      "title": "Load Image"
+    }
+  },
+
+
+  // ----------------------------------------------------------
+  // Video VAE
+  // ----------------------------------------------------------
+
+  "121": {
+    "inputs": {
+      "vae_name":
+        "h3/minimax_h3_video_vae_int8_convrot.safetensors"
+    },
+    "class_type": "VAELoader",
+    "_meta": {
+      "title": "Video VAE"
+    }
+  },
+
+
+  // ----------------------------------------------------------
+  // Audio VAE
+  // ----------------------------------------------------------
+
+  "122": {
+    "inputs": {
+      "vae_name":
+        "h3/minimax_h3_audio_vae_fp32.safetensors"
+    },
+    "class_type": "VAELoader",
+    "_meta": {
+      "title": "Audio VAE"
+    }
+  },
+
+
+  // ----------------------------------------------------------
+  // Audio decode
+  // ----------------------------------------------------------
+
+  "123": {
+    "inputs": {
+      "samples": [
+        "234",
+        0
+      ],
+      "vae": [
+        "122",
+        0
+      ]
+    },
+    "class_type": "VAEDecodeAudio",
+    "_meta": {
+      "title": "VAE Decode Audio"
+    }
+  },
+
+
+  // ----------------------------------------------------------
+  // Video decode
+  // ----------------------------------------------------------
+
+  "124": {
+    "inputs": {
+      "samples": [
+        "234",
+        0
+      ],
+      "vae": [
+        "121",
+        0
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE Decode"
+    }
+  },
+
+
+  // ----------------------------------------------------------
+  // Create video
+  // ----------------------------------------------------------
+
+  "132": {
+    "inputs": {
+      "fps": fps,
+      "bit_depth": 10,
+
+      "images": [
+        "124",
+        0
+      ],
+
+      "audio": [
+        "123",
+        0
+      ]
+    },
+    "class_type": "CreateVideo",
+    "_meta": {
+      "title": "Create Video"
+    }
+  },
+
+
+  // ----------------------------------------------------------
+  // MiniMax H3 Image to Video
+  // ----------------------------------------------------------
+
+  "133": {
+    "inputs": {
+      "prompt": [
+        "194",
+        0
+      ],
+
+      "width": [
+        "153",
+        0
+      ],
+
+      "height": [
+        "153",
+        1
+      ],
+
+      "length": [
+        "134",
+        0
+      ],
+
+      "clip": [
+        "232",
+        0
+      ],
+
+      "vae": [
+        "121",
+        0
+      ],
+
+      "first_frame": [
+        "176",
+        0
+      ],
+
+      "last_frame": [
+        "177",
+        0
+      ]
+    },
+    "class_type": "MiniMaxH3ImageToVideo",
+    "_meta": {
+      "title": "MiniMax H3 Image to Video"
+    }
+  },
+
+
+  // ----------------------------------------------------------
+  // Duration -> frames
+  // ----------------------------------------------------------
+
+  "134": {
+    "inputs": {
+      "expression":
+        "max(5, round(a * 24)) + (5 - (max(5, round(a * 24)) % 17)) % 17",
+
+      "values.a": [
+        "135",
+        0
+      ]
+    },
+    "class_type": "ComfyMathExpression",
+    "_meta": {
+      "title": "Video Length"
+    }
+  },
+
+
+  // ----------------------------------------------------------
+  // Duration
+  // ----------------------------------------------------------
+
+  "135": {
+    "inputs": {
+      "value": duration
+    },
+    "class_type": "PrimitiveFloat",
+    "_meta": {
+      "title": "Float (duration)"
+    }
+  },
+
+
+  // ----------------------------------------------------------
+  // Resolution
+  // ----------------------------------------------------------
+
+  "153": {
+    "inputs": {
+      "ResolutionState":
+        "{\"mode\":\"custom_ratio\",\"ratio\":\"16:9\",\"w\":1376,\"h\":768,\"custom_w\":960,\"custom_h\":576,\"custom_ratio_w\":16,\"custom_ratio_h\":9,\"snap\":32}"
+    },
+    "class_type": "PixaromaResolution",
+    "_meta": {
+      "title": "Resolution Pixaroma"
+    }
+  },
+
+
+  // ----------------------------------------------------------
+  // Save video
+  // ----------------------------------------------------------
+
+  "159": {
+    "inputs": {
+      "filename_prefix":
+        `video/${run_id}.h3`,
+
+      "format":
+        "auto",
+
+      "codec":
+        "auto",
+
+      "video": [
+        "132",
+        0
+      ]
+    },
+    "class_type": "SaveVideo",
+    "_meta": {
+      "title": "Save Video"
+    }
+  },
+
+
+  // ----------------------------------------------------------
+  // First frame resize
+  // ----------------------------------------------------------
+
+  "176": {
+    "inputs": {
+      "width": [
+        "153",
+        0
+      ],
+
+      "height": [
+        "153",
+        1
+      ],
+
+      "interpolation":
+        "area",
+
+      "method":
+        "fill / crop",
+
+      "condition":
+        "always",
+
+      "multiple_of":
+        0,
+
+      "image": [
+        "119",
+        0
+      ]
+    },
+    "class_type": "ImageResize+",
+    "_meta": {
+      "title": "Image Resize - First Frame"
+    }
+  },
+
+
+  // ----------------------------------------------------------
+  // Last frame resize
+  // ----------------------------------------------------------
+  //
+  // Same source image intentionally used to help create
+  // a seamless return to the initial visual state.
+  //
+
+  "177": {
+    "inputs": {
+      "width": [
+        "153",
+        0
+      ],
+
+      "height": [
+        "153",
+        1
+      ],
+
+      "interpolation":
+        "area",
+
+      "method":
+        "fill / crop",
+
+      "condition":
+        "always",
+
+      "multiple_of":
+        0,
+
+      "image": [
+        "120",
+        0
+      ]
+    },
+    "class_type": "ImageResize+",
+    "_meta": {
+      "title": "Image Resize - Last Frame"
+    }
+  },
+
+
+  // ----------------------------------------------------------
+  // H3 prompt
+  // ----------------------------------------------------------
+
+  "194": {
+    "inputs": {
+      "value":
+        h3_prompt
+    },
+    "class_type":
+      "PrimitiveStringMultiline",
+    "_meta": {
+      "title": "MiniMax H3 Prompt"
+    }
+  },
+
+
+  // ----------------------------------------------------------
+  // H3 CLIP
+  // ----------------------------------------------------------
+
+  "232": {
+    "inputs": {
+      "clip_name":
+        "h3/qwen3vl_32b_minimax_h3_int8_convrot.safetensors",
+
+      "type":
+        "minimax",
+
+      "device":
+        "default"
+    },
+    "class_type":
+      "CLIPLoader",
+    "_meta": {
+      "title": "Load CLIP"
+    }
+  },
+
+
+  // ----------------------------------------------------------
+  // H3 sampler
+  // ----------------------------------------------------------
+
+  "234": {
+    "inputs": {
+      "eta": 0.5,
+
+      "sampler_name":
+        "linear/euler",
+
+      "scheduler":
+        "simple",
+
+      "steps": 8,
+
+      "steps_to_run": -1,
+
+      "denoise": 1,
+
+      "cfg": 1,
+
+      "seed":
+        Math.floor(
+          Math.random() * 4294967295
+        ),
+
+      "sampler_mode":
+        "standard",
+
+      "bongmath":
+        false,
+
+      "model": [
+        "243",
+        0
+      ],
+
+      "positive": [
+        "133",
+        0
+      ],
+
+      "negative": [
+        "235",
+        0
+      ],
+
+      "latent_image": [
+        "133",
+        1
+      ]
+    },
+    "class_type":
+      "ClownsharKSampler_Beta",
+    "_meta": {
+      "title": "ClownsharKSampler"
+    }
+  },
+
+
+  // ----------------------------------------------------------
+  // Negative conditioning
+  // ----------------------------------------------------------
+
+  "235": {
+    "inputs": {
+      "conditioning": [
+        "133",
+        0
+      ]
+    },
+    "class_type":
+      "ConditioningZeroOut",
+    "_meta": {
+      "title": "Conditioning Zero Out"
+    }
+  },
+
+
+  // ----------------------------------------------------------
+  // H3 diffusion model
+  // ----------------------------------------------------------
+
+  "237": {
+    "inputs": {
+      "unet_name":
+        "h3/minimaxH3INT8INT4_fl2vaINT8Pruned.safetensors",
+
+      "weight_dtype":
+        "default"
+    },
+    "class_type":
+      "UNETLoader",
+    "_meta": {
+      "title": "Load Diffusion Model"
+    }
+  },
+
+
+  // ----------------------------------------------------------
+  // H3 CLIP Projection
+  // ----------------------------------------------------------
+
+  "238": {
+    "inputs": {
+      "clip_name":
+        "h3/qwen3-vl-4b-heretic_nvfp4.safetensors",
+
+      "type":
+        "auto",
+
+      "projection":
+        "mmh3-4b-ClipProj-celeb-mlp.safetensors",
+
+      "device":
+        "cuda:0",
+
+      "mode":
+        "dynamic"
+    },
+    "class_type":
+      "ClipProjLoader",
+    "_meta": {
+      "title": "ClipProj Loader"
+    }
+  },
+
+
+  // ----------------------------------------------------------
+  // H3 Turbo LoRA
+  // ----------------------------------------------------------
+
+  "243": {
+    "inputs": {
+      "lora_name":
+        "h3/minimax_h3_fl2v_lightx2v_turbo_4step_v0.1_comfy_resized_avg_rank_21_bf16.safetensors",
+
+      "strength_model":
+        0.8,
+
+      "model": [
+        "150",
+        0
+      ]
+    },
+    "class_type":
+      "LoraLoaderModelOnly",
+    "_meta": {
+      "title": "Load H3 LoRA"
+    }
+  },
+
+
+  // ----------------------------------------------------------
+  // Model preview override
+  // ----------------------------------------------------------
+
+  "150": {
+    "inputs": {
+      "max_resolution":
+        1024,
+
+      "jpeg_quality":
+        80,
+
+      "suppress_default_preview":
+        true,
+
+      "preview_frames":
+        600,
+
+      "preview_fps":
+        12,
+
+      "tiny_vae":
+        "taeh3.safetensors",
+
+      "model": [
+        "192",
+        0
+      ]
+    },
+    "class_type":
+      "ModelPreviewOverrideKJ",
+    "_meta": {
+      "title": "Model Preview Override"
+    }
+  },
+
+
+  // ----------------------------------------------------------
+  // H3 LoRA manager
+  // ----------------------------------------------------------
+
+  "192": {
+    "inputs": {
+      "text":
+        "",
+
+      "loras": {
+        "__value__": []
+      },
+
+      "model": [
+        "237",
+        0
+      ]
+    },
+    "class_type":
+      "Lora Loader (LoraManager)",
+    "_meta": {
+      "title": "Lora Loader"
+    }
+  }
+};
+
+
+// ============================================================
+// 6. Return ComfyUI payload
+// ============================================================
+
+return [
+  {
+    json: {
+
+      ...input,
+
+      video_duration:
+        duration,
+
+      video_fps:
+        fps,
+
+      video_prompt:
+        h3_prompt,
+
+      comfy_payload: {
+        prompt,
+
+        client_id:
+          `n8n-${run_id}-h3`
+      }
+    }
+  }
+];
