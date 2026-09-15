@@ -1,0 +1,46 @@
+-- Bảng phiên chat (1 user)
+CREATE TABLE IF NOT EXISTS chat_session (
+  chat_id        TEXT PRIMARY KEY,
+  current_preset TEXT NOT NULL DEFAULT 'content_default',
+  updated_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Bảng preset
+CREATE TABLE IF NOT EXISTS preset_store (
+  preset_id             TEXT PRIMARY KEY,
+  system_prompt_template TEXT NOT NULL,
+  tool_whitelist        TEXT[] NOT NULL DEFAULT '{}',
+  temperature           NUMERIC(3,2) NOT NULL DEFAULT 0.4,
+  description           TEXT,
+  updated_at            TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Bảng action chờ duyệt
+CREATE TABLE IF NOT EXISTS pending_action (
+  action_id    TEXT PRIMARY KEY,
+  tool_name    TEXT NOT NULL,
+  params       JSONB NOT NULL DEFAULT '{}'::jsonb,
+  status       TEXT NOT NULL DEFAULT 'pending',  -- pending | confirmed | cancelled
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  confirmed_at TIMESTAMPTZ,
+  cancelled_at TIMESTAMPTZ
+);
+
+CREATE INDEX IF NOT EXISTS idx_pending_action_status ON pending_action(status);
+
+-- Seed presets
+INSERT INTO preset_store (preset_id, system_prompt_template, tool_whitelist, temperature, description)
+VALUES
+('content_default',
+ 'Bạn là Social Media Manager. Trả lời bằng tiếng Việt trừ khi được yêu cầu khác. Khi người dùng muốn đăng bài / trả lời comment / xoá, hãy chuẩn bị action và chờ người dùng xác nhận. Trả lời ngắn gọn, có cấu trúc.',
+ ARRAY['post_youtube_video','post_facebook_post','reply_comment','delete_comment','query_analytics'],
+ 0.4, 'Preset mặc định cho content'),
+('support_preset',
+ 'Bạn là agent chăm sóc khách hàng trên social. Ưu tiên trả lời comment nhanh, lịch sự, đúng trọng tâm. Không đăng bài mới.',
+ ARRAY['reply_comment','query_analytics'],
+ 0.3, 'Chỉ reply comment + analytics'),
+('analytics_preset',
+ 'Bạn là analyst. Chỉ trả lời số liệu, xu hướng, tóm tắt báo cáo. TUYỆT ĐỐI không đăng/sửa/xoá gì.',
+ ARRAY['query_analytics'],
+ 0.2, 'Chỉ đọc số liệu')
+ON CONFLICT (preset_id) DO NOTHING;
