@@ -1,0 +1,4656 @@
+{
+  "name": "01 - TRIGGERS INPUT AUTH ROUTER",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "a5d42d7e-c011-4034-a4de-c3220136f924",
+      "name": "TRG - Manual",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        1968,
+        1744
+      ]
+    },
+    {
+      "parameters": {
+        "updates": [
+          "*"
+        ],
+        "additionalFields": {}
+      },
+      "id": "6e72e809-e364-45f9-916e-0ddbc11994c5",
+      "name": "TRG - Telegram",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        608,
+        672
+      ],
+      "webhookId": "9a23397f-4695-4d14-8cfe-08d44bbe75a8",
+      "credentials": {
+        "telegramApi": {
+          "id": "88edvv4t8LsF8FCc",
+          "name": "l3uddha"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "8ae45ce7-1879-4e8b-9a7a-8da92513c08a",
+      "name": "SET - Normalize Manual",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2192,
+        1744
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "961d651b-54d4-4a1a-8b27-78bff6b62b58",
+      "name": "SET - Normalize Telegram",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        832,
+        672
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "bba15735-027e-4dff-981e-b3e4e5519a30",
+      "name": "SET - User Context",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1056,
+        672
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "db34b9d0-b938-4e24-ae96-8db6e4199968",
+      "name": "SET - System Context",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2416,
+        1744
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "a687bd38-a1fa-4bb4-8673-e1955df6a1e7",
+      "name": "SET - Schedule Context",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2416,
+        1472
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "f2acb34e-7a91-412a-a525-761d29130fb9",
+      "name": "SET - Social Event Context",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2416,
+        1216
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "options": {}
+      },
+      "id": "256467f1-e25f-41dd-a930-5fc1e53c097c",
+      "name": "DB - User Lookup",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1264,
+        672
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "authorized",
+              "rightValue": "authorized",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "790d9f31-81e2-4e6a-b459-597ac143c982",
+      "name": "AUTH - User Authorized",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1488,
+        672
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "268ee69f-12ee-4e8d-bd18-e327c5bf7962",
+      "name": "OUT - Unauthorized",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1728,
+        832
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "options": {}
+      },
+      "id": "0e69f9a6-7979-4737-aa81-2edbb9280a4c",
+      "name": "DB - Workspace Lookup",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1728,
+        592
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "options": {}
+      },
+      "id": "e1519ab2-e9a1-476d-ae96-15c6a2345e62",
+      "name": "DB - Workspace Member",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1968,
+        592
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "admin",
+                    "rightValue": "admin",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "admin"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "editor",
+                    "rightValue": "editor",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "editor"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "viewer",
+                    "rightValue": "viewer",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "viewer"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "11dbf69d-0857-42ae-9771-822d709b9d23",
+      "name": "AUTH - RBAC",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        2176,
+        576
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "6a5efb2a-a81f-453f-a9b4-24805f3f92c9",
+      "name": "OUT - Admin",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2416,
+        448
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "bd36f863-2568-448f-88a9-ba17a7a15517",
+      "name": "OUT - Editor",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2416,
+        608
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "7f090c81-204f-4404-8f5f-3461822179ad",
+      "name": "OUT - Viewer",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2416,
+        768
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "1be51e31-1216-4671-a7e8-0484d6dac048",
+      "name": "OUT - System Event",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2640,
+        1744
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "630f0969-4cd5-468c-a682-a9cdfcc3acfb",
+      "name": "OUT - Scheduled Event",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2640,
+        1472
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "2bde56fb-f5b7-4e96-a888-abc60b5ba318",
+      "name": "OUT - Social Event",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2640,
+        1216
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "social/events",
+        "options": {}
+      },
+      "id": "1a1b72c7-2b9a-4eb0-b6fc-2da9bf16de07",
+      "name": "TRG - Social Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        1968,
+        1216
+      ],
+      "webhookId": "326c0e56-62c2-49ef-9917-19f465d8a4e0"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes"
+            }
+          ]
+        }
+      },
+      "id": "721bfa92-6721-4a86-8132-7ff67f5dfd8d",
+      "name": "TRG - Schedule",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        1968,
+        1472
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "fc2ac98a-577f-4163-b9d1-20acf87be615",
+      "name": "SET - Normalize Social Webhook",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2192,
+        1216
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "c7ce8875-06be-457b-bff9-0a109bfec5e6",
+      "name": "SET - Normalize Schedule",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2192,
+        1472
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "6359fc0d-be50-469a-b916-26fe6920d125",
+      "name": "SET - Authorized User Context",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2768,
+        656
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "53579d36-e354-4272-8b9c-e7426981cc50",
+      "name": "SET - Request Context",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3008,
+        656
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "explicit_command"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "natural_language"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "3ac21234-4dc7-4a16-918c-7ab093b72d54",
+      "name": "ROUTER - Input Command",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        3248,
+        656
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "8bc15974-2330-41e2-9255-aeac619fbab1",
+      "name": "SET - Explicit Command Context",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        4096,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "options": {}
+      },
+      "id": "eaa9e015-6578-4fb6-a069-49936620a805",
+      "name": "AI - Intent Extractor",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        3584,
+        960
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "RUU5qTexyduc87BB",
+          "name": "LM Studio"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "28abefbe-2730-4e36-bf72-945462828895",
+      "name": "SET - Structured Intent",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        4096,
+        832
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "1c7426a1-8403-468a-8181-763e51c8f351",
+      "name": "MERGE - Intent Sources",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        4480,
+        752
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "content_agent"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "support_agent"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "moderation_agent"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "analytics_agent"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "system_agent"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "e5ababe1-7413-4af2-a98a-257779b12f2d",
+                    "leftValue": "",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "research_agent"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "439ee9c8-ce2e-406f-b139-0b7c96abb467",
+                    "leftValue": "",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "operation_agent"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "unknown"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d3073662-2d54-4ad7-a243-61138422693e",
+      "name": "ROUTER - Agent",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        4736,
+        688
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        3584,
+        752
+      ],
+      "id": "ee8c6f13-26e7-42fb-bbc7-53529d5950c0",
+      "name": "Intent Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        5120,
+        -144
+      ],
+      "id": "542c4ab1-661c-4970-8e4f-026770fd174c",
+      "name": "Content Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "options": {}
+      },
+      "id": "ca3285bb-8960-48f9-a41c-fe7ee1372dc7",
+      "name": "AI - Content",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        5120,
+        64
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "RUU5qTexyduc87BB",
+          "name": "LM Studio"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        5120,
+        288
+      ],
+      "id": "7a4637dc-d8a7-48a4-b541-63cc6472adf9",
+      "name": "Support Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "options": {}
+      },
+      "id": "c384dba1-9570-4874-ae29-b091e15e3851",
+      "name": "AI - Support",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        5200,
+        528
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "RUU5qTexyduc87BB",
+          "name": "LM Studio"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        5120,
+        720
+      ],
+      "id": "a7ace7ab-2240-490b-b20d-591465e543bf",
+      "name": "Moderation Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "options": {}
+      },
+      "id": "12debb6d-2ed0-454e-acd2-564dfc97f3ca",
+      "name": "AI - Moderation",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        5200,
+        960
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "RUU5qTexyduc87BB",
+          "name": "LM Studio"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        5120,
+        1152
+      ],
+      "id": "46cecd36-f2d3-42d1-9c1c-442827b00534",
+      "name": "Analytics Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "options": {}
+      },
+      "id": "95b7e93f-bbd5-4238-bd93-f25fac887e3d",
+      "name": "AI - Analytics ",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        5200,
+        1392
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "RUU5qTexyduc87BB",
+          "name": "LM Studio"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        5152,
+        2400
+      ],
+      "id": "0dd860eb-4486-48b0-aab3-803738cf0434",
+      "name": "Unknown Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "options": {}
+      },
+      "id": "8bbc71e6-b73c-43ba-b700-53109b8266c6",
+      "name": "AI - Unknown",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        5232,
+        2624
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "RUU5qTexyduc87BB",
+          "name": "LM Studio"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "6e47cee1-ab26-44b9-a80e-bbaeb79fa569",
+                    "leftValue": "",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "write"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "rewrite"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "approve"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "unknown"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f9c6ca82-925d-432d-82b0-bdbd0c179bff",
+      "name": "ROUTER - Content Callback",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        5408,
+        -176
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "37fe03cf-dd22-416f-94a2-9ac00939488a",
+      "name": "SET - Approved Content Context",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        5712,
+        -128
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "options": {}
+      },
+      "id": "be3c7d5f-d2b6-4079-ad6c-81f09efb7495",
+      "name": "DB - Save Content",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        5904,
+        -128
+      ]
+    },
+    {
+      "parameters": {
+        "additionalFields": {}
+      },
+      "id": "a04e2ebe-5ff0-49ca-a0b2-b38b53ba2443",
+      "name": "TELEGRAM - Send Confirmation",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        6112,
+        -128
+      ],
+      "webhookId": "db8ada81-344d-4671-9380-c1e292221482",
+      "credentials": {
+        "telegramApi": {
+          "id": "88edvv4t8LsF8FCc",
+          "name": "l3uddha"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "additionalFields": {}
+      },
+      "id": "716885ed-10b5-4b2c-b0e4-82ef91087ee2",
+      "name": "TELEGRAM - Send Preview",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        5872,
+        -336
+      ],
+      "webhookId": "3a35cd5a-27a0-4c5a-ae8e-154ba0e754c1",
+      "credentials": {
+        "telegramApi": {
+          "id": "88edvv4t8LsF8FCc",
+          "name": "l3uddha"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "55f612bb-7a14-4cb7-9d62-34243cc5a29a",
+      "name": "SET - Content Draft Context",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        5712,
+        -336
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        5120,
+        1568
+      ],
+      "id": "4b59cefa-d12a-4d46-9719-1511ccf25061",
+      "name": "System Agent1"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "options": {}
+      },
+      "id": "2dff77da-e1db-4fd2-bb30-7fc2a2ca1435",
+      "name": "AI - System1",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        5200,
+        1808
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "RUU5qTexyduc87BB",
+          "name": "LM Studio"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        5152,
+        1984
+      ],
+      "id": "5de6b753-0bb4-4402-a5f2-fabd05f7ea0a",
+      "name": "Operation Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "options": {}
+      },
+      "id": "14eff7f7-1872-4e8d-86a1-987bccac721e",
+      "name": "AI - Operation",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        5216,
+        2208
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "RUU5qTexyduc87BB",
+          "name": "LM Studio"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "38a447d5-6f25-4639-9002-f41dfe35663c",
+      "name": "SET - Moderation Result",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        6928,
+        944
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "options": {}
+      },
+      "id": "32e71609-a019-47d9-a4e1-aa5e17d254e4",
+      "name": "DB - Save Moderation Result",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        7168,
+        944
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "approve"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "flag"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "reject"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "unknown"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c5656bfc-07c2-4015-96f7-006fea325836",
+      "name": "ROUTER - Moderation Decision",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        7376,
+        912
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "7616b428-8b8f-4601-8b5e-aeab45e86ec6",
+      "name": "OUT - Moderation Approved",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        7616,
+        752
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "86b48c5e-10dd-4aa4-b21f-0467089709d6",
+      "name": "OUT - Moderation Flagged",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        7616,
+        912
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "1878f50b-6309-4174-8e16-3cfe42493ca2",
+      "name": "OUT - Moderation Rejected",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        7616,
+        1072
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "751d9911-80af-478c-a6e9-86c366da6b9d",
+      "name": "OUT - Moderation Unknown",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        7616,
+        1232
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "2868718e-125c-42fe-8a9c-901872f24ddf",
+      "name": "SET - Operation Context",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        7760,
+        3712
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "schedule"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "list_pending"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "post"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "edit_post"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "delete_post"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "unpost"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "comment"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "delete_comment"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "list_comments"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "unknown"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "db28a93a-706c-4b74-a194-b877206b74b3",
+      "name": "ROUTER - Operation",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        8304,
+        3568
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "abf1ee03-5f6f-4b3f-8c7e-3abe7e306c1a",
+      "name": "SET - List Pending Context",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        8752,
+        3376
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "55d043de-b75a-4501-b2c0-214993765bc0",
+      "name": "SET - Post Context",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        8752,
+        3504
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "11985ab3-d55d-45ce-8def-b08a5b8b1988",
+      "name": "SET - Edit Post Context",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        8752,
+        3632
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "c22d54d2-e589-4905-afb0-10ba0f3ab4e5",
+      "name": "SET - Delete Post Context",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        8752,
+        3760
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "9a17423a-54cf-417a-8425-814150bb414f",
+      "name": "SET - Unpost Context",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        8752,
+        3888
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "55b4ec20-f342-4312-b0ec-1d22aa5cc97d",
+      "name": "SET - Comment Context",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        8752,
+        4016
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "e8d8cf16-6d2d-43cb-bcaf-9dcc74ec9c98",
+      "name": "SET - Delete Comment Context",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        8752,
+        4272
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "0bd2c869-36d2-4164-9634-c3f81e87c279",
+      "name": "SET - List Comments Context",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        8752,
+        4400
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a962147f-5b98-4285-9bc4-6a7e1af85737",
+      "name": "ROUTER - Confirmation",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        8992,
+        3696
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "06ca5833-c4ee-4d21-92f3-e8ac0d3d774e",
+      "name": "SET - Confirmation Request",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        9200,
+        3696
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "f6c024ef-e0c8-48e7-946f-e151bdcb7067",
+                    "leftValue": "",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "draft"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "confirm"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "unknown"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "24d658c9-b173-4fd1-a46a-fcb1b78096ff",
+      "name": "ROUTER - Operation Callback",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        7552,
+        3728
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "options": {}
+      },
+      "id": "c48bfc25-8bef-442d-ad0b-d2f51756d95a",
+      "name": "DB - Load Pending Operation",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        8128,
+        3712
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "d73bab96-95fa-42f8-9961-845dd7793d76",
+      "name": "SOCIAL - Schedule",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        8704,
+        4688
+      ]
+    },
+    {
+      "parameters": {
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        }
+      },
+      "id": "50b7c75c-4450-48ee-9f63-bf69b409586d",
+      "name": "DB - Save Operation",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        8976,
+        5072
+      ]
+    },
+    {
+      "parameters": {
+        "additionalFields": {}
+      },
+      "id": "caeafa9f-4309-4e4b-acc6-c07824d90290",
+      "name": "TELEGRAM - Send Operation Result",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        9408,
+        5072
+      ],
+      "webhookId": "a9033c20-3579-4488-9270-36c48420d1bb",
+      "credentials": {
+        "telegramApi": {
+          "id": "88edvv4t8LsF8FCc",
+          "name": "l3uddha"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "7f3c9b18-5ab7-4aae-991c-97fd463f02cf",
+      "name": "SET - Schedule Context1",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        8752,
+        3248
+      ]
+    },
+    {
+      "parameters": {
+        "additionalFields": {}
+      },
+      "id": "baded030-1e9f-413d-94d4-efebfbb2ccb1",
+      "name": "TELEGRAM - Send Confirmation1",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        9376,
+        3696
+      ],
+      "webhookId": "59441995-d762-4c9b-be16-69d9dc165ce7",
+      "credentials": {
+        "telegramApi": {
+          "id": "88edvv4t8LsF8FCc",
+          "name": "l3uddha"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        9216,
+        5072
+      ],
+      "id": "e3c3fbad-2022-4fcf-a8dd-605aa67439eb",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        7952,
+        3712
+      ],
+      "id": "89b01c1b-3056-4c40-a5e9-ab932818826a",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "e9977c5d-c0be-469c-98ce-48799eeb4e60",
+      "name": "SOCIAL - Delete Comment",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        8704,
+        5584
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "b379463f-7339-4566-b188-d22a88cbaa1e",
+      "name": "SOCIAL - Reply Comment",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        8704,
+        5456
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "93c9d08f-efa1-4b3c-b93d-e073311d1899",
+      "name": "SOCIAL - Comment",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        8704,
+        5328
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "58bdc862-3479-46b6-9a55-71ae9580e292",
+      "name": "SOCIAL - Unpost",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        8704,
+        5200
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "schedule"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "post"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "edit_post"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "delete_post"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "unpost"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "comment"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "delete_comment"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "unknown"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "051ef6b0-2a7b-4705-ade1-e19d8de8a565",
+      "name": "ROUTER - Operation1",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        8368,
+        5024
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "8359e216-d0af-487f-8ea2-c05b1193439c",
+      "name": "SOCIAL - Delete Post",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        8704,
+        5072
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "5d090a3a-63d7-4176-af1a-989e93d40cb7",
+      "name": "SOCIAL - Edit Post",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        8704,
+        4944
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "2191dea1-30b5-4b10-ac91-f96cda626e2c",
+      "name": "SOCIAL - Post",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        8704,
+        4816
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "options": {}
+      },
+      "id": "43ed3813-0c61-4214-8072-615ec83841c8",
+      "name": "DB - Initial",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2848,
+        1744
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "reply"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "support_action"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "escalation"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "unknown"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "10f2dfe8-0235-4a9f-8999-81aa7c5ec16f",
+      "name": "ROUTER - Support Intent",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        6432,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "6365d754-dc4e-4992-b00e-854cef84aa31",
+      "name": "SET - Reply Context",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        6672,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "aa5165f2-e03e-492a-8f1c-144ca7676241",
+      "name": "SET - Support Action Context",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        6672,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "44460f0e-e88c-4990-b476-e6db6e92167c",
+      "name": "SET - Escalation Context",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        6672,
+        368
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "053f206b-9373-48ee-bed8-483d4b432f49",
+      "name": "SET - Unknown Context",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        6912,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "3505da11-e376-467a-b5ae-fff21e3ebc8c",
+      "name": "SET - Support Action Request",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        6928,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "ced966aa-a82b-4149-a1b6-0ba03ac6e0b6",
+      "name": "SET - Escalation Request",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        6912,
+        368
+      ]
+    },
+    {
+      "parameters": {
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        }
+      },
+      "id": "f8dce5d7-982a-47e1-afa5-ba488fe7e6f0",
+      "name": "DB - Save Support Case",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        5968,
+        592
+      ]
+    },
+    {
+      "parameters": {
+        "additionalFields": {}
+      },
+      "id": "3233d0bc-b69b-4a16-97af-61bb30282d0d",
+      "name": "TELEGRAM - Send Preview1",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        7280,
+        48
+      ],
+      "webhookId": "3a35cd5a-27a0-4c5a-ae8e-154ba0e754c1",
+      "credentials": {
+        "telegramApi": {
+          "id": "88edvv4t8LsF8FCc",
+          "name": "l3uddha"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "f6c024ef-e0c8-48e7-946f-e151bdcb7067",
+                    "leftValue": "",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "draft"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "confirm"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "unknown"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "2c776dcb-ddc4-44c2-8d0b-61e3f2658279",
+      "name": "ROUTER - Operation Callback1",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        5648,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        6208,
+        592
+      ],
+      "id": "ce6a0e92-a6e2-4e24-bd1a-65ea9abf5d1b",
+      "name": "HTTP Request2"
+    },
+    {
+      "parameters": {
+        "additionalFields": {}
+      },
+      "id": "59dd7570-75a5-4a9b-bf86-39fef99e1626",
+      "name": "TELEGRAM - Send Preview2",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        6432,
+        592
+      ],
+      "webhookId": "3a35cd5a-27a0-4c5a-ae8e-154ba0e754c1",
+      "credentials": {
+        "telegramApi": {
+          "id": "88edvv4t8LsF8FCc",
+          "name": "l3uddha"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "ce147884-45c3-4070-a0bb-133f3fb88bcc",
+      "name": "SET - Analytics Result",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        5648,
+        1296
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "summary"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "report"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "insight"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "unknown"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "aaa8e4ae-d68f-4afb-86d3-29403fe09ec6",
+      "name": "ROUTER - Analytics Output",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        5888,
+        1296
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "5b25241f-3c1f-493e-a522-605a8de4f31e",
+      "name": "SET - Summary Context",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        6128,
+        1104
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "6d2bc1fe-b53a-45d3-8227-be35fa12a7a6",
+      "name": "SET - Report Context",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        6128,
+        1232
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "0f5f2af7-fc47-4cbb-942b-701c307ff997",
+      "name": "SET - Insight Context",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        6128,
+        1360
+      ]
+    },
+    {
+      "parameters": {
+        "additionalFields": {}
+      },
+      "id": "b1a8014d-b1ce-418a-be02-ada237541f75",
+      "name": "TELEGRAM - Send Analytics",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        6704,
+        1360
+      ],
+      "webhookId": "e2893d79-10cc-420e-852e-924c1d61cfbe",
+      "credentials": {
+        "telegramApi": {
+          "id": "88edvv4t8LsF8FCc",
+          "name": "l3uddha"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        }
+      },
+      "id": "9b93abf0-66b0-4a87-acfa-a3cbf947b0c6",
+      "name": "DB - Save Analytics Result",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        6368,
+        1360
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        6576,
+        1968
+      ],
+      "id": "e2497e28-dfdf-49f7-9150-1f62d215cf8f",
+      "name": "System Agent"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "read"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "configuration"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "management"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "maintenance"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "unknown"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "3ea9368f-4dad-43a3-8bb9-5230765f335c",
+      "name": "ROUTER - System Intent",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        7344,
+        1968
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "b0c92e0f-b9ff-4309-ab6e-4f6b85a6d6db",
+      "name": "SET - Read Context",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        7584,
+        1728
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "a4335527-6424-497a-874d-f90cfa44f2bc",
+      "name": "SET - Configuration Context",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        7584,
+        1856
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "17168e9c-d4de-4509-a17c-6a8c6d719023",
+      "name": "SET - Management Context",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        7584,
+        1984
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "e25132eb-885e-4e35-808e-e641ddc26e44",
+      "name": "SET - Maintenance Context",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        7584,
+        2112
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "options": {}
+      },
+      "id": "ee22b1ad-e6d7-4b89-b79c-06d60cd70be6",
+      "name": "DB - Load System Data",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        7824,
+        1728
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "options": {}
+      },
+      "id": "c29eb9a6-fd2d-492d-a882-caf259aa2cb1",
+      "name": "DB - Load System Configuration",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        7824,
+        1856
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "c516308f-ebed-4004-9e59-ec3869d644d4",
+      "name": "SET - System Operation Context",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        7824,
+        1984
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "8b1bc3d0-017a-4d79-bcc7-013bbd5d2639",
+      "name": "SET - Maintenance Operation Context",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        7824,
+        2112
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "20410e54-4eaf-4eec-a9cc-eca52e664a6c",
+      "name": "ROUTER - System Confirmation",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        8064,
+        2048
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "5c69e753-7455-4c4c-b128-5bb42ce02129",
+      "name": "SET - Direct System Context",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        8304,
+        2112
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "16201743-c2bc-4c81-8648-76fc9601a6c3",
+      "name": "SET - System Callback Context",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        8544,
+        2240
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "confirm"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "cancel"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "unknown"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "fec07503-c0a0-4ec1-931f-425b48b4cb32",
+      "name": "ROUTER - System Callback",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        8784,
+        2240
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "options": {}
+      },
+      "id": "96ae78d2-a962-4bb3-bba7-6c1d500b606b",
+      "name": "DB - Load Pending System Operation",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        9024,
+        2240
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "configuration"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "management"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "maintenance"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b05a7487-a66e-4eb8-9211-257e2adf70d0",
+      "name": "ROUTER - System Execution",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        9264,
+        2240
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "e8577ae7-8178-4adc-8c68-caae5959c297",
+      "name": "SYSTEM - Configuration",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        9504,
+        2128
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "d76cff13-bdd1-4d5e-afb2-d865bedf1226",
+      "name": "SYSTEM - Management",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        9504,
+        2240
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "90a7d261-0fce-41af-95d7-41f57ead6281",
+      "name": "SYSTEM - Maintenance",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        9504,
+        2352
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "options": {}
+      },
+      "id": "e09438e5-4888-4f11-80d3-4b4d044513ee",
+      "name": "DB - Save System Operation",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        9744,
+        2240
+      ]
+    },
+    {
+      "parameters": {
+        "additionalFields": {}
+      },
+      "id": "12b099c9-737e-4c5b-966c-e3e48aa28155",
+      "name": "TELEGRAM - Send System Result",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        9984,
+        2240
+      ],
+      "webhookId": "bcbe5233-aaa2-4093-a1ae-75ce9a03bbbd",
+      "credentials": {
+        "telegramApi": {
+          "id": "88edvv4t8LsF8FCc",
+          "name": "l3uddha"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "0a05cd6a-46d2-4056-a7d9-c80955c690c3",
+      "name": "SET - System Context1",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        7104,
+        1968
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "2f3d7028-33b2-43a8-bb9a-8aa8c4b64a8d",
+      "name": "SET - Unknown Context1",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        7584,
+        2240
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "f9e37d12-1169-4932-92a8-690fe0571bc9",
+      "name": "SET - Confirmation Request1",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        8304,
+        1936
+      ]
+    },
+    {
+      "parameters": {
+        "additionalFields": {}
+      },
+      "id": "fe0d034a-e98c-44dc-8532-5d7778505309",
+      "name": "TELEGRAM - Send Confirmation2",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        8544,
+        1936
+      ],
+      "webhookId": "72175879-e04b-4ec4-826c-212374cd46a3",
+      "credentials": {
+        "telegramApi": {
+          "id": "88edvv4t8LsF8FCc",
+          "name": "l3uddha"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "TRG - Manual": {
+      "main": [
+        [
+          {
+            "node": "SET - Normalize Manual",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TRG - Telegram": {
+      "main": [
+        [
+          {
+            "node": "SET - Normalize Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SET - Normalize Manual": {
+      "main": [
+        [
+          {
+            "node": "SET - System Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SET - Normalize Telegram": {
+      "main": [
+        [
+          {
+            "node": "SET - User Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SET - User Context": {
+      "main": [
+        [
+          {
+            "node": "DB - User Lookup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SET - System Context": {
+      "main": [
+        [
+          {
+            "node": "OUT - System Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SET - Schedule Context": {
+      "main": [
+        [
+          {
+            "node": "OUT - Scheduled Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SET - Social Event Context": {
+      "main": [
+        [
+          {
+            "node": "OUT - Social Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DB - User Lookup": {
+      "main": [
+        [
+          {
+            "node": "AUTH - User Authorized",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AUTH - User Authorized": {
+      "main": [
+        [
+          {
+            "node": "DB - Workspace Lookup",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "OUT - Unauthorized",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DB - Workspace Lookup": {
+      "main": [
+        [
+          {
+            "node": "DB - Workspace Member",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DB - Workspace Member": {
+      "main": [
+        [
+          {
+            "node": "AUTH - RBAC",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AUTH - RBAC": {
+      "main": [
+        [
+          {
+            "node": "OUT - Admin",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "OUT - Editor",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "OUT - Viewer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TRG - Social Webhook": {
+      "main": [
+        [
+          {
+            "node": "SET - Normalize Social Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TRG - Schedule": {
+      "main": [
+        [
+          {
+            "node": "SET - Normalize Schedule",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SET - Normalize Social Webhook": {
+      "main": [
+        [
+          {
+            "node": "SET - Social Event Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SET - Normalize Schedule": {
+      "main": [
+        [
+          {
+            "node": "SET - Schedule Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SET - Authorized User Context": {
+      "main": [
+        [
+          {
+            "node": "SET - Request Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OUT - Admin": {
+      "main": [
+        [
+          {
+            "node": "SET - Authorized User Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OUT - Editor": {
+      "main": [
+        [
+          {
+            "node": "SET - Authorized User Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OUT - Viewer": {
+      "main": [
+        [
+          {
+            "node": "SET - Authorized User Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SET - Request Context": {
+      "main": [
+        [
+          {
+            "node": "ROUTER - Input Command",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ROUTER - Input Command": {
+      "main": [
+        [
+          {
+            "node": "SET - Explicit Command Context",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Intent Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SET - Explicit Command Context": {
+      "main": [
+        [
+          {
+            "node": "MERGE - Intent Sources",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SET - Structured Intent": {
+      "main": [
+        [
+          {
+            "node": "MERGE - Intent Sources",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "MERGE - Intent Sources": {
+      "main": [
+        [
+          {
+            "node": "ROUTER - Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ROUTER - Agent": {
+      "main": [
+        [
+          {
+            "node": "Content Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Support Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Moderation Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Analytics Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Operation Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [],
+        [
+          {
+            "node": "System Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Unknown Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI - Intent Extractor": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Intent Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Intent Agent": {
+      "main": [
+        [
+          {
+            "node": "SET - Structured Intent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI - Content": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Content Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI - Support": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Support Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI - Moderation": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Moderation Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI - Analytics ": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Analytics Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI - Unknown": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Unknown Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Content Agent": {
+      "main": [
+        [
+          {
+            "node": "ROUTER - Content Callback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Moderation Agent": {
+      "main": [
+        [
+          {
+            "node": "SET - Moderation Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ROUTER - Content Callback": {
+      "main": [
+        [
+          {
+            "node": "SET - Content Draft Context",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "SET - Content Draft Context",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "SET - Approved Content Context",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "SET - Approved Content Context": {
+      "main": [
+        [
+          {
+            "node": "DB - Save Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DB - Save Content": {
+      "main": [
+        [
+          {
+            "node": "TELEGRAM - Send Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SET - Content Draft Context": {
+      "main": [
+        [
+          {
+            "node": "TELEGRAM - Send Preview",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI - System1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "System Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI - Operation": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Operation Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SET - Moderation Result": {
+      "main": [
+        [
+          {
+            "node": "DB - Save Moderation Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DB - Save Moderation Result": {
+      "main": [
+        [
+          {
+            "node": "ROUTER - Moderation Decision",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ROUTER - Moderation Decision": {
+      "main": [
+        [
+          {
+            "node": "OUT - Moderation Approved",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "OUT - Moderation Flagged",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "OUT - Moderation Rejected",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "OUT - Moderation Unknown",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Operation Agent": {
+      "main": [
+        [
+          {
+            "node": "ROUTER - Operation Callback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SET - Operation Context": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ROUTER - Operation": {
+      "main": [
+        [
+          {
+            "node": "SET - Schedule Context1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "SET - List Pending Context",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "SET - Post Context",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "SET - Edit Post Context",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "SET - Delete Post Context",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "SET - Unpost Context",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "SET - Comment Context",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "SET - Delete Comment Context",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "SET - List Comments Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SET - List Pending Context": {
+      "main": [
+        [
+          {
+            "node": "ROUTER - Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SET - Post Context": {
+      "main": [
+        [
+          {
+            "node": "ROUTER - Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SET - Edit Post Context": {
+      "main": [
+        [
+          {
+            "node": "ROUTER - Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SET - Delete Post Context": {
+      "main": [
+        [
+          {
+            "node": "ROUTER - Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SET - Unpost Context": {
+      "main": [
+        [
+          {
+            "node": "ROUTER - Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SET - Comment Context": {
+      "main": [
+        [
+          {
+            "node": "ROUTER - Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SET - Delete Comment Context": {
+      "main": [
+        [
+          {
+            "node": "ROUTER - Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SET - List Comments Context": {
+      "main": [
+        [
+          {
+            "node": "ROUTER - Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ROUTER - Confirmation": {
+      "main": [
+        [
+          {
+            "node": "SET - Confirmation Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SET - Confirmation Request": {
+      "main": [
+        [
+          {
+            "node": "TELEGRAM - Send Confirmation1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ROUTER - Operation Callback": {
+      "main": [
+        [
+          {
+            "node": "SET - Operation Context",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "ROUTER - Operation1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "DB - Load Pending Operation": {
+      "main": [
+        [
+          {
+            "node": "ROUTER - Operation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SOCIAL - Schedule": {
+      "main": [
+        [
+          {
+            "node": "DB - Save Operation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DB - Save Operation": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SET - Schedule Context1": {
+      "main": [
+        [
+          {
+            "node": "ROUTER - Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "System Agent1": {
+      "main": [
+        [
+          {
+            "node": "System Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "TELEGRAM - Send Operation Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "DB - Load Pending Operation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SOCIAL - Delete Comment": {
+      "main": [
+        [
+          {
+            "node": "DB - Save Operation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SOCIAL - Reply Comment": {
+      "main": [
+        [
+          {
+            "node": "DB - Save Operation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SOCIAL - Comment": {
+      "main": [
+        [
+          {
+            "node": "DB - Save Operation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SOCIAL - Unpost": {
+      "main": [
+        [
+          {
+            "node": "DB - Save Operation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ROUTER - Operation1": {
+      "main": [
+        [
+          {
+            "node": "SOCIAL - Schedule",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "SOCIAL - Post",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "SOCIAL - Edit Post",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "SOCIAL - Delete Post",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "SOCIAL - Unpost",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "SOCIAL - Comment",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "SOCIAL - Delete Comment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SOCIAL - Delete Post": {
+      "main": [
+        [
+          {
+            "node": "DB - Save Operation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SOCIAL - Edit Post": {
+      "main": [
+        [
+          {
+            "node": "DB - Save Operation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SOCIAL - Post": {
+      "main": [
+        [
+          {
+            "node": "DB - Save Operation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OUT - Social Event": {
+      "main": [
+        [
+          {
+            "node": "SET - Request Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OUT - Scheduled Event": {
+      "main": [
+        [
+          {
+            "node": "SET - Request Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OUT - System Event": {
+      "main": [
+        [
+          {
+            "node": "DB - Initial",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ROUTER - Support Intent": {
+      "main": [
+        [
+          {
+            "node": "SET - Reply Context",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "SET - Support Action Context",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "SET - Escalation Context",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "SET - Unknown Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SET - Reply Context": {
+      "main": [
+        [
+          {
+            "node": "TELEGRAM - Send Preview1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SET - Support Action Context": {
+      "main": [
+        [
+          {
+            "node": "SET - Support Action Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SET - Support Action Request": {
+      "main": [
+        [
+          {
+            "node": "TELEGRAM - Send Preview1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SET - Escalation Context": {
+      "main": [
+        [
+          {
+            "node": "SET - Escalation Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SET - Escalation Request": {
+      "main": [
+        [
+          {
+            "node": "TELEGRAM - Send Preview1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DB - Save Support Case": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SET - Unknown Context": {
+      "main": [
+        [
+          {
+            "node": "TELEGRAM - Send Preview1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Support Agent": {
+      "main": [
+        [
+          {
+            "node": "ROUTER - Operation Callback1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ROUTER - Operation Callback1": {
+      "main": [
+        [
+          {
+            "node": "ROUTER - Support Intent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "DB - Save Support Case",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request2": {
+      "main": [
+        [
+          {
+            "node": "TELEGRAM - Send Preview2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SET - Analytics Result": {
+      "main": [
+        [
+          {
+            "node": "ROUTER - Analytics Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ROUTER - Analytics Output": {
+      "main": [
+        [
+          {
+            "node": "SET - Summary Context",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "SET - Report Context",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "SET - Insight Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SET - Summary Context": {
+      "main": [
+        [
+          {
+            "node": "TELEGRAM - Send Analytics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SET - Report Context": {
+      "main": [
+        [
+          {
+            "node": "TELEGRAM - Send Analytics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SET - Insight Context": {
+      "main": [
+        [
+          {
+            "node": "DB - Save Analytics Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DB - Save Analytics Result": {
+      "main": [
+        [
+          {
+            "node": "TELEGRAM - Send Analytics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analytics Agent": {
+      "main": [
+        [
+          {
+            "node": "SET - Analytics Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "System Agent": {
+      "main": [
+        [
+          {
+            "node": "SET - System Context1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ROUTER - System Intent": {
+      "main": [
+        [
+          {
+            "node": "SET - Read Context",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "SET - Configuration Context",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "SET - Management Context",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "SET - Maintenance Context",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "SET - Unknown Context1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SET - Read Context": {
+      "main": [
+        [
+          {
+            "node": "DB - Load System Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SET - Configuration Context": {
+      "main": [
+        [
+          {
+            "node": "DB - Load System Configuration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SET - Management Context": {
+      "main": [
+        [
+          {
+            "node": "SET - System Operation Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SET - Maintenance Context": {
+      "main": [
+        [
+          {
+            "node": "SET - Maintenance Operation Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DB - Load System Data": {
+      "main": [
+        [
+          {
+            "node": "TELEGRAM - Send System Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DB - Load System Configuration": {
+      "main": [
+        [
+          {
+            "node": "ROUTER - System Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SET - System Operation Context": {
+      "main": [
+        [
+          {
+            "node": "ROUTER - System Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SET - Maintenance Operation Context": {
+      "main": [
+        [
+          {
+            "node": "ROUTER - System Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ROUTER - System Confirmation": {
+      "main": [
+        [
+          {
+            "node": "SET - Confirmation Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SET - System Callback Context": {
+      "main": [
+        [
+          {
+            "node": "ROUTER - System Callback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ROUTER - System Callback": {
+      "main": [
+        [
+          {
+            "node": "DB - Load Pending System Operation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DB - Load Pending System Operation": {
+      "main": [
+        [
+          {
+            "node": "ROUTER - System Execution",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SET - Direct System Context": {
+      "main": [
+        [
+          {
+            "node": "ROUTER - System Execution",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ROUTER - System Execution": {
+      "main": [
+        [
+          {
+            "node": "SYSTEM - Configuration",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "SYSTEM - Management",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "SYSTEM - Maintenance",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SYSTEM - Configuration": {
+      "main": [
+        [
+          {
+            "node": "DB - Save System Operation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SYSTEM - Management": {
+      "main": [
+        [
+          {
+            "node": "DB - Save System Operation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SYSTEM - Maintenance": {
+      "main": [
+        [
+          {
+            "node": "DB - Save System Operation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DB - Save System Operation": {
+      "main": [
+        [
+          {
+            "node": "TELEGRAM - Send System Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SET - System Context1": {
+      "main": [
+        [
+          {
+            "node": "ROUTER - System Intent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SET - Confirmation Request1": {
+      "main": [
+        [
+          {
+            "node": "TELEGRAM - Send Confirmation2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "db3da5a0-691e-42c3-acbf-8ee4ade5d270",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "5b3bfaa0bfb34dcd6a48dec4404a2cb3bcc519d830c46a68b973b8ab503454a0"
+  },
+  "nodeGroups": [],
+  "id": "39riJwCR2zk9CYs8",
+  "tags": []
+}
