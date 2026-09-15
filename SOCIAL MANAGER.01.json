@@ -1,0 +1,800 @@
+{
+  "name": "02 - SOCIAL MANAGER (1 agent + preset theo session + confirm inline button)",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": ["message", "callback_query"],
+        "additionalFields": {}
+      },
+      "id": "7ed47ddc-d890-42b5-a551-ba239b544789",
+      "name": "TRG - Telegram Bot",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [-1584, 2736],
+      "webhookId": "4c153c92-38a3-4cc1-8eb8-dd57c759b822",
+      "credentials": { "telegramApi": { "id": "88edvv4t8LsF8FCc", "name": "l3uddha" } }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "social/events",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "a2a53ec8-9488-4aa4-9925-1bd04acc6fe4",
+      "name": "TRG - Social Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [-1584, 3248],
+      "webhookId": "7812cc2a-0ac6-4278-a031-3540a7d8ac5f"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2 },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.headers['x-hub-signature-256'] }}",
+              "rightValue": "={{ $env.WEBHOOK_SECRET_CHECK }}",
+              "operator": { "type": "string", "operation": "equals" }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "04250635-eb2f-4358-ba2b-81ff3241d831",
+      "name": "GATE - Verify Webhook Signature",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [-1344, 3248]
+    },
+    {
+      "parameters": { "options": {} },
+      "id": "2e70a239-9c6f-4b3a-b056-bb5579eddf02",
+      "name": "RESPOND - Webhook Ack",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [-1104, 3184]
+    },
+    {
+      "parameters": { "options": { "responseCode": 401 } },
+      "id": "7937ecd1-50b8-4250-9fcf-fa806cbbb925",
+      "name": "STOP - Reject Invalid Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [-1104, 3328]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "se-1", "name": "source",      "value": "social_event", "type": "string" },
+            { "id": "se-2", "name": "chat_id",     "value": "={{ $env.MY_CHAT_ID }}", "type": "string" },
+            { "id": "se-3", "name": "platform",    "value": "={{ $json.body?.platform || $json.platform || 'unknown' }}", "type": "string" },
+            { "id": "se-4", "name": "event_type",  "value": "={{ $json.body?.event_type || $json.event_type || 'unknown' }}", "type": "string" },
+            { "id": "se-5", "name": "post_id",     "value": "={{ $json.body?.post_id || '' }}", "type": "string" },
+            { "id": "se-6", "name": "comment_id",  "value": "={{ $json.body?.comment_id || '' }}", "type": "string" },
+            { "id": "se-7", "name": "author",      "value": "={{ $json.body?.author || '' }}", "type": "string" },
+            { "id": "se-8", "name": "text",        "value": "={{ $json.body?.text || 'Có sự kiện mới từ ' + ($json.body?.platform || 'platform') }}", "type": "string" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "142421d0-a6e7-4d13-a36d-d782c9a1a34f",
+      "name": "SET - Normalize Social Event",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-864, 3248]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2 },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.message?.chat?.id || $json.callback_query?.message?.chat?.id }}",
+              "rightValue": "={{ $env.MY_CHAT_ID }}",
+              "operator": { "type": "string", "operation": "equals" }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "f4be0737-4b1a-4346-906c-67f36c59edda",
+      "name": "GATE - Whitelist Chat",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [-1344, 2736]
+    },
+    {
+      "parameters": {},
+      "id": "5d694176-c5da-402c-81f6-3d6ca81e7f7d",
+      "name": "STOP - Ignore Unauthorized",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [-1104, 2896]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2 },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.callback_query }}",
+              "rightValue": "",
+              "operator": { "type": "object", "operation": "exists" }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "0534b646-99ee-441b-af96-589723705717",
+      "name": "ROUTER - Update Type",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [-1104, 2640]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "nm-1", "name": "chat_id",    "value": "={{ $json.message.chat.id }}", "type": "string" },
+            { "id": "nm-2", "name": "text",       "value": "={{ $json.message.text || $json.message.caption || '' }}", "type": "string" },
+            { "id": "nm-3", "name": "message_id", "value": "={{ $json.message.message_id }}", "type": "number" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a6f300c1-1904-4b4d-bb46-a388c97d1724",
+      "name": "SET - Normalize Message",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-864, 2496]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2 },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.text }}",
+              "rightValue": "/mode ",
+              "operator": { "type": "string", "operation": "startsWith" }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "2e210933-c5f7-4fcd-a555-8a0d4623804e",
+      "name": "GATE - Mode Command",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [-624, 2496]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "pp-1", "name": "preset_name", "value": "={{ $json.text.replace('/mode ', '').trim() }}", "type": "string" },
+            { "id": "pp-2", "name": "chat_id",     "value": "={{ $json.chat_id }}", "type": "string" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f377c7b7-8b35-4382-80c7-030c73db49e9",
+      "name": "SET - Parse Preset Name",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-384, 2416]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO chat_session (chat_id, current_preset, updated_at)\nVALUES ('{{ $json.chat_id }}', '{{ $json.preset_name }}', NOW())\nON CONFLICT (chat_id) DO UPDATE\nSET current_preset = EXCLUDED.current_preset,\n    updated_at = NOW()\nRETURNING chat_id, current_preset, updated_at;",
+        "options": {}
+      },
+      "id": "69f96e22-f610-42ad-89ad-cc6fef10573b",
+      "name": "DB - Upsert Chat Session",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [-144, 2416],
+      "credentials": { "postgres": { "id": "REPLACE_PG_CRED_ID", "name": "Postgres Social" } }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $env.MY_CHAT_ID }}",
+        "text": "✅ Đã đổi preset cho phiên chat thành: `{{ $json.current_preset }}`",
+        "additionalFields": { "parse_mode": "Markdown" }
+      },
+      "id": "76ea3cd6-0c4a-4070-af2e-d5e81dc16751",
+      "name": "TELEGRAM - Send Mode Confirmation",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [96, 2416],
+      "webhookId": "fb4adad0-8f24-48da-a35a-dc0af8adca49",
+      "credentials": { "telegramApi": { "id": "88edvv4t8LsF8FCc", "name": "l3uddha" } }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT COALESCE(\n  (SELECT current_preset FROM chat_session WHERE chat_id = '{{ $json.chat_id || $env.MY_CHAT_ID }}'),\n  'content_default'\n) AS current_preset;",
+        "options": {}
+      },
+      "id": "89107239-a43f-424c-9b60-5899e0cf9fbd",
+      "name": "DB - Read Chat Session",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [-384, 2576],
+      "credentials": { "postgres": { "id": "REPLACE_PG_CRED_ID", "name": "Postgres Social" } }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT preset_id,\n       system_prompt_template,\n       tool_whitelist,\n       temperature\nFROM preset_store\nWHERE preset_id = '{{ $json.current_preset }}'\nLIMIT 1;",
+        "options": {}
+      },
+      "id": "94ff7ec1-81fc-41cc-a320-79ddb9cf5fe8",
+      "name": "DB - Read Preset Config",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [-144, 2576],
+      "credentials": { "postgres": { "id": "REPLACE_PG_CRED_ID", "name": "Postgres Social" } }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('SET - Normalize Message').item?.json.text || $('SET - Normalize Social Event').item?.json.text || $json.text || '' }}",
+        "options": {
+          "systemMessage": "={{ $json.system_prompt_template }}\n\n---\nTOOL WHITELIST (chỉ được gọi các tool này): {{ ($json.tool_whitelist || []).join(', ') }}\nNếu người dùng yêu cầu việc nằm ngoài whitelist, từ chối và giải thích ngắn gọn.\n\nQUY TẮC OUTPUT:\n- Nếu bạn định gọi 1 tool thuộc nhóm GHI (post_youtube_video, post_facebook_post, reply_comment, delete_comment, edit_post, delete_post, unpost), hãy kết thúc câu trả lời bằng khối:\n```action\n{\"tool_name\":\"<name>\",\"params\":{...}}\n```\n- Nếu chỉ trả lời/tra cứu thông tin, không cần khối action."
+        }
+      },
+      "id": "5c34f0f1-78c9-4910-a1b1-93c7f50c8d4c",
+      "name": "AGENT - Core",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [96, 2576]
+    },
+    {
+      "parameters": {
+        "model": { "__rl": true, "mode": "list", "value": "gpt-5-mini" },
+        "options": {}
+      },
+      "id": "439846dd-1608-4ec7-9c5b-dc18dbbe274a",
+      "name": "AI - Core LLM",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [96, 2736],
+      "credentials": { "openAiApi": { "id": "RUU5qTexyduc87BB", "name": "LM Studio" } }
+    },
+    {
+      "parameters": {
+        "name": "post_youtube_video",
+        "description": "DRAFT-ONLY tool. Đăng video lên YouTube. Không thực thi thật — chỉ trả về JSON mô tả action để workflow chính xử lý.",
+        "workflowId": { "__rl": true, "value": "REPLACE_TOOL_DRAFT_WORKFLOW_ID", "mode": "list" },
+        "workflowInputs": { "mappingMode": "defineBelow", "value": {} }
+      },
+      "id": "00a58313-d335-4944-9046-3afcac0f412a",
+      "name": "TOOL - Post YouTube",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 1.3,
+      "position": [336, 2448]
+    },
+    {
+      "parameters": {
+        "name": "post_facebook_post",
+        "description": "DRAFT-ONLY tool. Đăng bài lên Facebook. Không thực thi thật.",
+        "workflowId": { "__rl": true, "value": "REPLACE_TOOL_DRAFT_WORKFLOW_ID", "mode": "list" },
+        "workflowInputs": { "mappingMode": "defineBelow", "value": {} }
+      },
+      "id": "9f3c13e3-036e-4bd4-b389-8273464016dc",
+      "name": "TOOL - Post Facebook",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 1.3,
+      "position": [336, 2544]
+    },
+    {
+      "parameters": {
+        "name": "reply_comment",
+        "description": "DRAFT-ONLY tool. Trả lời comment. Không thực thi thật.",
+        "workflowId": { "__rl": true, "value": "REPLACE_TOOL_DRAFT_WORKFLOW_ID", "mode": "list" },
+        "workflowInputs": { "mappingMode": "defineBelow", "value": {} }
+      },
+      "id": "679c91df-8882-4bce-bbea-d640be184303",
+      "name": "TOOL - Reply Comment",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 1.3,
+      "position": [336, 2640]
+    },
+    {
+      "parameters": {
+        "name": "query_analytics",
+        "description": "READ-ONLY tool. Truy vấn số liệu analytics (views, likes, comments). Không cần duyệt.",
+        "workflowId": { "__rl": true, "value": "REPLACE_ANALYTICS_WORKFLOW_ID", "mode": "list" },
+        "workflowInputs": { "mappingMode": "defineBelow", "value": {} }
+      },
+      "id": "68c96206-9d9d-4122-9ce8-eb4d70980553",
+      "name": "TOOL - Query Analytics",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 1.3,
+      "position": [336, 2736]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Trích action block khỏi output của Agent Core\nconst out = $json.output || $json.text || '';\nconst m = out.match(/```action\\s*([\\s\\S]*?)```/);\nlet tool_name = '';\nlet params = {};\nif (m) {\n  try {\n    const parsed = JSON.parse(m[1].trim());\n    tool_name = parsed.tool_name || '';\n    params = parsed.params || {};\n  } catch (e) { /* ignore */ }\n}\nreturn {\n  agent_output: out,\n  tool_name,\n  params,\n  has_action: !!tool_name\n};"
+      },
+      "id": "46083f46-7b40-4120-b98d-fccebba2924f",
+      "name": "SET - Extract Tool Call",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [576, 2576]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2 },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.tool_name }}",
+              "rightValue": "post_youtube_video|post_facebook_post|edit_post|delete_post|unpost|reply_comment|delete_comment",
+              "operator": { "type": "string", "operation": "regex" }
+            },
+            {
+              "leftValue": "={{ $json.has_action }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "true", "singleValue": true }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "4ae82675-3850-470f-93a0-7ced5b29b9a3",
+      "name": "GATE - Requires Confirm",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [816, 2576]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $env.MY_CHAT_ID }}",
+        "text": "={{ $json.agent_output }}",
+        "additionalFields": {}
+      },
+      "id": "UNUSED_PLACEHOLDER_NO_RESULT",
+      "name": "TELEGRAM - Send Agent Reply (No Action)",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1056, 2416],
+      "webhookId": "11111111-0000-0000-0000-000000000001",
+      "credentials": { "telegramApi": { "id": "88edvv4t8LsF8FCc", "name": "l3uddha" } }
+    },
+    {
+      "parameters": {
+        "workflowId": { "__rl": true, "value": "REPLACE_PLATFORM_ADAPTERS_WORKFLOW_ID", "mode": "list" },
+        "workflowInputs": { "mappingMode": "defineBelow", "value": {} },
+        "options": { "waitForSubWorkflow": true }
+      },
+      "id": "cc73bc73-e455-4b1c-b243-5e0503e315c8",
+      "name": "EXEC - Run Tool Directly",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [1056, 2496]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $env.MY_CHAT_ID }}",
+        "text": "📊 Kết quả:\n{{ JSON.stringify($json, null, 2) }}",
+        "additionalFields": {}
+      },
+      "id": "311317a5-fde7-46ad-b9d0-d462a0c2db7a",
+      "name": "TELEGRAM - Send Result",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1296, 2496],
+      "webhookId": "8d7537a8-0817-4ca4-bab2-044b527f9cef",
+      "credentials": { "telegramApi": { "id": "88edvv4t8LsF8FCc", "name": "l3uddha" } }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "pa-1",
+              "name": "action_id",
+              "value": "={{ 'act_' + $now.format('yyyyMMdd_HHmmss') }}",
+              "type": "string"
+            },
+            { "id": "pa-2", "name": "tool_name", "value": "={{ $json.tool_name }}", "type": "string" },
+            { "id": "pa-3", "name": "params",    "value": "={{ $json.params }}", "type": "object" },
+            { "id": "pa-4", "name": "agent_output", "value": "={{ $json.agent_output }}", "type": "string" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "53d8ff46-4de1-4a1a-99f1-6357780ff696",
+      "name": "SET - Build Pending Action",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1056, 2656]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO pending_action (action_id, tool_name, params, status, created_at)\nVALUES (\n  '{{ $json.action_id }}',\n  '{{ $json.tool_name }}',\n  '{{ JSON.stringify($json.params).replace(/'/g, \"''\") }}'::jsonb,\n  'pending',\n  NOW()\n)\nRETURNING action_id, tool_name, params, status, created_at;",
+        "options": {}
+      },
+      "id": "252bb493-f5a4-4604-a981-9cffed43045d",
+      "name": "DB - Save Pending Action",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [1296, 2656],
+      "credentials": { "postgres": { "id": "REPLACE_PG_CRED_ID", "name": "Postgres Social" } }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $env.MY_CHAT_ID }}",
+        "text": "={{ \"⚠️ *Cần bạn xác nhận*\\n\\n• Tool: `\" + $json.tool_name + \"`\\n• Action ID: `\" + $json.action_id + \"`\\n• Tạo lúc: \" + $json.created_at + \"\\n\\n*Params:*\\n\" + '```\\n' + JSON.stringify($json.params, null, 2) + '\\n```' }}",
+        "additionalFields": { "parse_mode": "Markdown" },
+        "replyMarkup": "inlineKeyboard",
+        "inlineKeyboard": {
+          "rows": [
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "✅ Duyệt",
+                    "additionalFields": { "callback_data": "={{ $json.action_id }}:confirm" }
+                  },
+                  {
+                    "text": "❌ Huỷ",
+                    "additionalFields": { "callback_data": "={{ $json.action_id }}:cancel" }
+                  },
+                  {
+                    "text": "✏️ Sửa",
+                    "additionalFields": { "callback_data": "={{ $json.action_id }}:edit" }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "id": "aaaa0b4d-381d-4831-89e1-e74e1d3b089d",
+      "name": "TELEGRAM - Send Preview With Buttons",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1536, 2656],
+      "webhookId": "9dd475b9-467e-4b78-ba5b-7e4dd7ac916b",
+      "credentials": { "telegramApi": { "id": "88edvv4t8LsF8FCc", "name": "l3uddha" } }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "cb-1", "name": "callback_data", "value": "={{ $json.callback_query.data }}", "type": "string" },
+            { "id": "cb-2", "name": "action_id",     "value": "={{ $json.callback_query.data.split(':')[0] }}", "type": "string" },
+            { "id": "cb-3", "name": "command",       "value": "={{ $json.callback_query.data.split(':')[1] }}", "type": "string" },
+            { "id": "cb-4", "name": "callback_query_id", "value": "={{ $json.callback_query.id }}", "type": "string" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "24e2dfbd-5846-46ca-b680-16e98259e05f",
+      "name": "SET - Parse Callback Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-864, 2960]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT action_id, tool_name, params, status, created_at\nFROM pending_action\nWHERE action_id = '{{ $json.action_id }}'\nLIMIT 1;",
+        "options": {}
+      },
+      "id": "66c9e497-18a7-48e3-af72-f89a03e30faf",
+      "name": "DB - Load Pending Action",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [-624, 2960],
+      "credentials": { "postgres": { "id": "REPLACE_PG_CRED_ID", "name": "Postgres Social" } }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2 },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "pending",
+              "operator": { "type": "string", "operation": "equals" }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "044fb835-aa43-4651-a778-654be91a80d2",
+      "name": "GATE - Status Pending",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [-384, 3072]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $env.MY_CHAT_ID }}",
+        "text": "ℹ️ Action này đã được xử lý trước đó (status: `{{ $json.status }}`). Không làm gì thêm.",
+        "additionalFields": { "parse_mode": "Markdown" }
+      },
+      "id": "3fbfb07f-d7b9-4c38-9eef-571777bbf613",
+      "name": "TELEGRAM - Send Already Handled",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [-144, 3168],
+      "webhookId": "0ce454a1-e554-4ccc-a649-8b007dde6666",
+      "credentials": { "telegramApi": { "id": "88edvv4t8LsF8FCc", "name": "l3uddha" } }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2 },
+                "conditions": [
+                  { "leftValue": "={{ $json.command }}", "rightValue": "confirm", "operator": { "type": "string", "operation": "equals" } }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "confirm"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2 },
+                "conditions": [
+                  { "leftValue": "={{ $json.command }}", "rightValue": "cancel", "operator": { "type": "string", "operation": "equals" } }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "cancel"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2 },
+                "conditions": [
+                  { "leftValue": "={{ $json.command }}", "rightValue": "edit", "operator": { "type": "string", "operation": "equals" } }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "edit"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a04e2766-cdd8-4ca2-80b7-56f747863f0a",
+      "name": "ROUTER - Callback Command",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [-144, 3008]
+    },
+    {
+      "parameters": {
+        "workflowId": { "__rl": true, "value": "REPLACE_PLATFORM_ADAPTERS_WORKFLOW_ID", "mode": "list" },
+        "workflowInputs": { "mappingMode": "defineBelow", "value": {} },
+        "options": { "waitForSubWorkflow": true }
+      },
+      "id": "c0072304-2442-4273-b3b9-5dda0a03aaaa",
+      "name": "EXEC - Platform Adapters",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [96, 2912]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE pending_action\nSET status = 'confirmed', confirmed_at = NOW()\nWHERE action_id = '{{ $('DB - Load Pending Action').item.json.action_id }}'\nRETURNING action_id, status, confirmed_at;",
+        "options": {}
+      },
+      "id": "7879761c-bf72-49eb-a53e-2b5640a236c5",
+      "name": "DB - Update Status Confirmed",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [336, 2912],
+      "credentials": { "postgres": { "id": "REPLACE_PG_CRED_ID", "name": "Postgres Social" } }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $env.MY_CHAT_ID }}",
+        "text": "✅ Action `{{ $('DB - Load Pending Action').item.json.action_id }}` đã thực thi.\n\nKết quả từ platform:\n{{ JSON.stringify($('EXEC - Platform Adapters').item.json, null, 2) }}",
+        "additionalFields": {}
+      },
+      "id": "09027de7-7920-4ba2-a179-3193dda887b2",
+      "name": "TELEGRAM - Send Execution Result",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [576, 2912],
+      "webhookId": "a51eaeb7-7eee-471a-a197-c8f9ca9447bc",
+      "credentials": { "telegramApi": { "id": "88edvv4t8LsF8FCc", "name": "l3uddha" } }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE pending_action\nSET status = 'cancelled', cancelled_at = NOW()\nWHERE action_id = '{{ $json.action_id }}'\nRETURNING action_id, status, cancelled_at;",
+        "options": {}
+      },
+      "id": "d9ae3cfa-99fa-4e69-907d-ebeaf8a9781f",
+      "name": "DB - Update Status Cancelled",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [96, 3008],
+      "credentials": { "postgres": { "id": "REPLACE_PG_CRED_ID", "name": "Postgres Social" } }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $env.MY_CHAT_ID }}",
+        "text": "❌ Đã huỷ action `{{ $json.action_id }}`. Không thực thi gì."
+      },
+      "id": "4e8280b3-53f3-4aa6-88cc-0f16c8e9e348",
+      "name": "TELEGRAM - Send Cancelled Notice",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [336, 3008],
+      "webhookId": "38bd1de3-918a-4a19-b64e-63d877a8d64d",
+      "credentials": { "telegramApi": { "id": "88edvv4t8LsF8FCc", "name": "l3uddha" } }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE pending_action\nSET status = 'cancelled', cancelled_at = NOW()\nWHERE action_id = '{{ $json.action_id }}'\nRETURNING action_id, status, cancelled_at;",
+        "options": {}
+      },
+      "id": "1521c632-50c7-4f0f-8a14-4bdad4d9621b",
+      "name": "DB - Update Status Cancelled For Edit",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [96, 3120],
+      "credentials": { "postgres": { "id": "REPLACE_PG_CRED_ID", "name": "Postgres Social" } }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $env.MY_CHAT_ID }}",
+        "text": "✏️ Đã huỷ action `{{ $json.action_id }}`.\n\nHãy nhắn lại cho mình nội dung bạn muốn sửa (ví dụ: \"đổi caption thành ...\", \"đổi tiêu đề video thành ...\"). Mình sẽ tạo action mới cho bạn duyệt lại."
+      },
+      "id": "b0ed1cf5-5a13-463d-8b9d-bc98d6caa479",
+      "name": "TELEGRAM - Ask Edit Instructions",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [336, 3120],
+      "webhookId": "6ba22cda-38ee-4f9d-8674-6915d3ce88d9",
+      "credentials": { "telegramApi": { "id": "88edvv4t8LsF8FCc", "name": "l3uddha" } }
+    }
+  ],
+  "connections": {
+    "TRG - Telegram Bot": {
+      "main": [[{ "node": "GATE - Whitelist Chat", "type": "main", "index": 0 }]]
+    },
+    "TRG - Social Webhook": {
+      "main": [[{ "node": "GATE - Verify Webhook Signature", "type": "main", "index": 0 }]]
+    },
+    "GATE - Verify Webhook Signature": {
+      "main": [
+        [
+          { "node": "RESPOND - Webhook Ack", "type": "main", "index": 0 },
+          { "node": "SET - Normalize Social Event", "type": "main", "index": 0 }
+        ],
+        [{ "node": "STOP - Reject Invalid Webhook", "type": "main", "index": 0 }]
+      ]
+    },
+    "SET - Normalize Social Event": {
+      "main": [[{ "node": "DB - Read Chat Session", "type": "main", "index": 0 }]]
+    },
+    "GATE - Whitelist Chat": {
+      "main": [
+        [{ "node": "ROUTER - Update Type", "type": "main", "index": 0 }],
+        [{ "node": "STOP - Ignore Unauthorized", "type": "main", "index": 0 }]
+      ]
+    },
+    "ROUTER - Update Type": {
+      "main": [
+        [{ "node": "SET - Parse Callback Data", "type": "main", "index": 0 }],
+        [{ "node": "SET - Normalize Message", "type": "main", "index": 0 }]
+      ]
+    },
+    "SET - Normalize Message": {
+      "main": [[{ "node": "GATE - Mode Command", "type": "main", "index": 0 }]]
+    },
+    "GATE - Mode Command": {
+      "main": [
+        [{ "node": "SET - Parse Preset Name", "type": "main", "index": 0 }],
+        [{ "node": "DB - Read Chat Session", "type": "main", "index": 0 }]
+      ]
+    },
+    "SET - Parse Preset Name": {
+      "main": [[{ "node": "DB - Upsert Chat Session", "type": "main", "index": 0 }]]
+    },
+    "DB - Upsert Chat Session": {
+      "main": [[{ "node": "TELEGRAM - Send Mode Confirmation", "type": "main", "index": 0 }]]
+    },
+    "DB - Read Chat Session": {
+      "main": [[{ "node": "DB - Read Preset Config", "type": "main", "index": 0 }]]
+    },
+    "DB - Read Preset Config": {
+      "main": [[{ "node": "AGENT - Core", "type": "main", "index": 0 }]]
+    },
+    "AI - Core LLM": {
+      "ai_languageModel": [[{ "node": "AGENT - Core", "type": "ai_languageModel", "index": 0 }]]
+    },
+    "TOOL - Post YouTube":  { "ai_tool": [[{ "node": "AGENT - Core", "type": "ai_tool", "index": 0 }]] },
+    "TOOL - Post Facebook": { "ai_tool": [[{ "node": "AGENT - Core", "type": "ai_tool", "index": 0 }]] },
+    "TOOL - Reply Comment": { "ai_tool": [[{ "node": "AGENT - Core", "type": "ai_tool", "index": 0 }]] },
+    "TOOL - Query Analytics": { "ai_tool": [[{ "node": "AGENT - Core", "type": "ai_tool", "index": 0 }]] },
+    "AGENT - Core": {
+      "main": [[{ "node": "SET - Extract Tool Call", "type": "main", "index": 0 }]]
+    },
+    "SET - Extract Tool Call": {
+      "main": [[{ "node": "GATE - Requires Confirm", "type": "main", "index": 0 }]]
+    },
+    "GATE - Requires Confirm": {
+      "main": [
+        [{ "node": "SET - Build Pending Action", "type": "main", "index": 0 }],
+        [
+          { "node": "TELEGRAM - Send Agent Reply (No Action)", "type": "main", "index": 0 },
+          { "node": "EXEC - Run Tool Directly", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "EXEC - Run Tool Directly": {
+      "main": [[{ "node": "TELEGRAM - Send Result", "type": "main", "index": 0 }]]
+    },
+    "SET - Build Pending Action": {
+      "main": [[{ "node": "DB - Save Pending Action", "type": "main", "index": 0 }]]
+    },
+    "DB - Save Pending Action": {
+      "main": [[{ "node": "TELEGRAM - Send Preview With Buttons", "type": "main", "index": 0 }]]
+    },
+    "SET - Parse Callback Data": {
+      "main": [[{ "node": "DB - Load Pending Action", "type": "main", "index": 0 }]]
+    },
+    "DB - Load Pending Action": {
+      "main": [[{ "node": "GATE - Status Pending", "type": "main", "index": 0 }]]
+    },
+    "GATE - Status Pending": {
+      "main": [
+        [{ "node": "ROUTER - Callback Command", "type": "main", "index": 0 }],
+        [{ "node": "TELEGRAM - Send Already Handled", "type": "main", "index": 0 }]
+      ]
+    },
+    "ROUTER - Callback Command": {
+      "main": [
+        [{ "node": "EXEC - Platform Adapters", "type": "main", "index": 0 }],
+        [{ "node": "DB - Update Status Cancelled", "type": "main", "index": 0 }],
+        [{ "node": "DB - Update Status Cancelled For Edit", "type": "main", "index": 0 }]
+      ]
+    },
+    "EXEC - Platform Adapters": {
+      "main": [[{ "node": "DB - Update Status Confirmed", "type": "main", "index": 0 }]]
+    },
+    "DB - Update Status Confirmed": {
+      "main": [[{ "node": "TELEGRAM - Send Execution Result", "type": "main", "index": 0 }]]
+    },
+    "DB - Update Status Cancelled": {
+      "main": [[{ "node": "TELEGRAM - Send Cancelled Notice", "type": "main", "index": 0 }]]
+    },
+    "DB - Update Status Cancelled For Edit": {
+      "main": [[{ "node": "TELEGRAM - Ask Edit Instructions", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1", "binaryMode": "separate" },
+  "versionId": "ae6b42af-a27a-4528-97c6-c00edcd7e32f",
+  "meta": { "templateCredsSetupCompleted": false },
+  "tags": []
+}
